@@ -147,6 +147,13 @@ table.bands tr.g-split td.bname{color:var(--accent-ink)}
 .bp.ok .bph{color:var(--accent-ink);} .bp.no .bph{color:var(--neg);}
 .bp .bpr{margin-top:5px;color:var(--ink2);} .bp .bpr b{color:var(--mut);font-weight:600;margin-right:6px;}
 .bp .bpr.dim{color:var(--mut);font-size:12.5px;}
+/* 保荐人「不托价」警示（一票否决）：琥珀金，与涨红/跌绿/强调蓝都不冲突 */
+.spw{margin:9px 0 3px;border-radius:11px;padding:10px 12px;font-size:12.5px;line-height:1.72;
+ background:rgba(183,121,31,.085);border:1px solid rgba(183,121,31,.30);color:var(--ink2);}
+.spw .swh{font-weight:650;color:#8a5a12;margin-bottom:5px;font-size:13px;}
+.spw .swi{margin-top:3px;}
+.spw .swi b{color:var(--ink);}
+.spw .swc{margin-top:6px;color:var(--mut);}
 /* 常见误区卡 */
 .myth{border:1px solid var(--line);border-radius:14px;padding:13px 16px;margin-bottom:10px;background:var(--card);}
 .myth .mt{font-weight:650;font-size:13.5px;color:var(--ink);display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;}
@@ -165,7 +172,7 @@ table.bands tr.g-split td.bname{color:var(--accent-ink)}
 <header>
   <div><h1>江西生物<span class="code">06915</span></h1>
   <div class="sub">发行价 13.060 ｜ 招股截止 2026-06-25 ｜ 暗盘 2026-06-29 ｜ 上市 2026-06-30</div></div>
-  <div class="sub">生成于 2026-09-27 15:56<br>数据：i668 实时 API + 腾讯行情 + 内置因子库(117)</div>
+  <div class="sub">生成于 2026-09-27 16:11<br>数据：i668 实时 API + 腾讯行情 + 内置因子库(117)</div>
 </header>
 
 <div class="tag">恒指 -1.0%</div>
@@ -176,9 +183,9 @@ table.bands tr.g-split td.bname{color:var(--accent-ink)}
 <div class="grid">
   <div class="card">
       <h3>招股期预测</h3>
-      <div class="range"><span class="lo">-3.3%</span> ~ <span class="hi">+14.7%</span></div>
-      <div class="center">中枢 <b class="base">+5.7%</b> ｜ <span class="stars">★☆☆</span></div>
-      <div class="price">价格 12.629 ~ 14.98 HKD</div>
+      <div class="range"><span class="lo">-5.0%</span> ~ <span class="hi">+13.0%</span></div>
+      <div class="center">中枢 <b class="base">+4.0%</b> ｜ <span class="stars">★☆☆</span></div>
+      <div class="price">价格 12.407 ~ 14.758 HKD</div>
     </div>
   <div class="card">
       <h3>中签后预测（暗盘收盘）</h3>
@@ -188,17 +195,17 @@ table.bands tr.g-split td.bname{color:var(--accent-ink)}
     </div>
   <div class="card cur"><span class="badge b-cur">当前</span>
       <h3>暗盘后预测（首日开盘）</h3>
-      <div class="range"><span class="lo">-17.5%</span> ~ <span class="hi">+2.5%</span></div>
-      <div class="center">中枢 <b class="base">-7.5%</b> ｜ <span class="stars">★★★</span></div>
-      <div class="price">价格 10.774 ~ 13.386 HKD</div>
+      <div class="range"><span class="lo">-19.8%</span> ~ <span class="hi">+0.2%</span></div>
+      <div class="center">中枢 <b class="base">-9.8%</b> ｜ <span class="stars">★★★</span></div>
+      <div class="price">价格 10.474 ~ 13.086 HKD</div>
     </div>
 </div>
 
 <section><h2>三阶段预测结论</h2>
 <table><tr><th>阶段</th><th>预测区间(相对发行价)</th><th>中枢</th><th>置信</th><th>价格区间(HKD)</th></tr>
-<tr><td class="k">S1 招股期</td><td><span class="lo">-3.3%</span> ~ <span class="hi">+14.7%</span></td><td class="base">+5.7%</td><td><span class="stars">★☆☆</span></td><td class="v">12.629 ~ 14.98</td></tr>
+<tr><td class="k">S1 招股期</td><td><span class="lo">-5.0%</span> ~ <span class="hi">+13.0%</span></td><td class="base">+4.0%</td><td><span class="stars">★☆☆</span></td><td class="v">12.407 ~ 14.758</td></tr>
 <tr><td class="k">S2 中签后·暗盘收盘</td><td><span class="lo">-3.9%</span> ~ <span class="hi">+20.8%</span></td><td class="base">+8.0%</td><td><span class="stars">★★★</span></td><td class="v">12.551 ~ 15.776</td></tr>
-<tr><td class="k">S3 暗盘后·首日开盘</td><td><span class="lo">-17.5%</span> ~ <span class="hi">+2.5%</span></td><td class="base">-7.5%</td><td><span class="stars">★★★</span></td><td class="v">10.774 ~ 13.386</td></tr>
+<tr><td class="k">S3 暗盘后·首日开盘</td><td><span class="lo">-19.8%</span> ~ <span class="hi">+0.2%</span></td><td class="base">-9.8%</td><td><span class="stars">★★★</span></td><td class="v">10.474 ~ 13.086</td></tr>
 </table>
 <div class="note">区间 = 该条件集的 [P25,P75] 不对称分位（真实 50% 中央区间）。<b>区间越宽 = 这只股在历史样本里越没规律</b>，如实告知，比假装精确有用。</div>
 </section>
@@ -221,7 +228,7 @@ table.bands tr.g-split td.bname{color:var(--accent-ink)}
     <h3 style="font-size:15px;margin:20px 0 4px">二、按<span class="tip" data-tip="按「暗盘实际成交涨幅」划分的 7 个区间，每个区间配一套动作。为什么按落点分而不是按预测分？因为动作必须在暗盘那两个小时里当场做，只有实际价格是确定的。">卖出档<i class="q">?</i></span>照表执行（暗盘 16:15–18:30 内看实际价）</h3>
     <table class="bands"><tr><th>暗盘实际落点</th><th>动作</th><th>实测依据</th><th>为什么</th></tr><tr class="g-exit"><td class="bname">暗盘 ≤ −10%</td><td>直接清仓，现金/融资都一样（深破发无豁免）</td><td class="ev">本档 n=6：首日开盘优于暗盘 2/6；中位差 −3.3pt；P25 −11.0pt</td><td class="ev">深破发后首日平均更差，尾部极厚——样本里出现过暗盘 −3.5% 熬成首日开盘 −33.9% 的案例；连 A+H 的深破发（n=3）也一只都没托回发行价</td></tr><tr class="g-exit"><td class="bname">暗盘 −10% ~ 0</td><td>直接清仓；<b>唯一豁免</b>见下方「破发豁免判定」</td><td class="ev">本档 n=6：首日开盘优于暗盘 3/6；中位差 −1.9pt（破发合计 n=12：5/12 更优、中位差 −2.7pt、翻红 0/12）</td><td class="ev">12 只破发样本里没有一只在首日开盘翻红（涨过发行价）；但<b>有 3 只回到发行价附近</b>——那 3 只全是 A+H（有 A 股价格锚）且暗盘只小跌。绿鞋本身不是保护（有绿鞋的 9 只破发里 6 只照样崩）。</td></tr><tr class="g-sell"><td class="bname">暗盘 0 ~ +20%</td><td>暗盘卖出为主（最多留 1/4 观察）</td><td class="ev">本档 n=22：首日开盘优于暗盘 5/22（23%）；中位差 −1.8pt</td><td class="ev">小幅盈利时等首日的胜率只有 23%，是全样本最差的一档——落袋为优</td></tr><tr class="g-sell"><td class="bname">暗盘 +20% ~ +50%</td><td>暗盘分批卖出，先落袋 6~7 成</td><td class="ev">本档 n=19：首日开盘优于暗盘 7/19（37%）；中位差 −2.8pt</td><td class="ev">中高盈利时首日普遍回吐，先把大头变成现金</td></tr><tr class="g-split"><td class="bname">暗盘 +50% ~ +100%</td><td>分批：暗盘卖一半，余量持到首日开盘早段卖</td><td class="ev">本档 n=23：首日开盘优于暗盘 14/23（61%）；中位差 +1.6pt；P25 −5.6pt</td><td class="ev">期望微正但方差大，分批把&#x27;赌对/赌错&#x27;都锁在可承受范围</td></tr><tr class="g-split"><td class="bname">暗盘 +100% ~ +200%</td><td>暗盘落袋 6~7 成，余量设移动止盈</td><td class="ev">本档 n=11：首日开盘优于暗盘 5/11（45%）；中位差 −1.4pt；P25 −11.5pt</td><td class="ev">翻倍以上首日不确定性放大；且首日 60% 高开低走（收盘−开盘中位 −4.5pt）</td></tr><tr class="g-split"><td class="bname">暗盘 &gt; +200%</td><td>大比例落袋（≥7 成），余量用移动止盈博尾段</td><td class="ev">本档 n=7：首日开盘优于暗盘 4/7（57%）；中位差 +9.0pt，但 P25 −15.0pt、最差 −24.8pt</td><td class="ev">中位很甜、方差失控：P25 已是 −15pt，等于约 1/4 概率把到手利润吐掉一大块</td></tr></table>
     <div class="note">依据口径：近 12 个月已上市新股，剔除缺失样本后 n=94；核心比较项 = 「首日开盘涨幅 − 暗盘涨幅」，大于 0 表示「熬到首日再卖」好过「暗盘直接卖」。</div>
-    <div class="bp no"><div class="bph">不适用豁免：破发直接清仓</div><div class="bpr"><b>依据</b>本股不是 A+H（没有 A 股价格锚）。实测「非 A+H + 温和破发」0/2 只托回发行价附近，首日开盘比暗盘再低中位 22.8pt（龙丰集团 -1.5%→-16.6%、江西生物 -3.5%→-33.9%）。</div><div class="bpr"><b>动作</b>暗盘破发即全清，不等首日、不等绿鞋。</div><div class="bpr dim"><b>边界</b>绿鞋<b>不构成豁免</b>：上例两只都有绿鞋、暗盘也只小跌，首日开盘照样崩。整体看破发 + 有绿鞋 9 只里只有 3 只回到发行价附近。</div></div>
+    <div class="bp no"><div class="bph">破发即全清：本股保荐人有「不托价」记录，不给第二次机会</div><div class="spw"><div class="swh">⚠ 保荐人「不托价」警示 ── 本股触发一票否决，覆盖上面的豁免判定</div><div class="swi">· <b>海通國際資本有限公司</b> ── 在「温和破发（−5%~0）+ 有绿鞋」这个<b>绿鞋最该生效</b>的区间里，<b>2/2</b> 次未把价格托回发行价附近（100.0%）。涉及项目：江西生物 -3.5%→-33.9%、龙丰集团 -1.5%→-16.6%。</div><div class="swc">该区间全样本 5 只、失败 2 只；上述保荐人参与 2 只、失败 2 只，其余 3 只失败 0 只。名单由每次运行的实测数据实时生成，非硬编码。</div></div><div class="bpr"><b>依据</b>本股保荐人 海通國際資本有限公司（2/2 次未托回）。「温和破发（−5%~0）+ 有绿鞋」是绿鞋<b>最该生效</b>的区间（只需托回 5% 以内），实测该区间 5 只里失败 2 只，其中上述保荐人参与 2 只、失败 2 只，其余 3 只失败 0 只。记录：海通國際資本有限公司：江西生物 -3.5%→-33.9%、龙丰集团 -1.5%→-16.6%。</div><div class="bpr"><b>动作</b>破发即全清，不等首日、不等绿鞋、不给保荐人第二次机会。</div><div class="bpr dim"><b>边界</b>诚实说明样本量：该保荐人参与样本仅 2 只，Fisher 双侧检验 p≈0.10，<b>方向一致但未达统计显著</b>——这是「警惕信号」，不是定理。之所以仍设为<b>一票否决</b>，是因为风险极不对称：走豁免的收益上限只是把 −4% 变成 0%（约 4pt），而失败下限是 −30pt（江西生物 −33.9%、龙丰集团 −16.6%）。宁可错杀，不可错放。名单由每次运行的实测数据实时生成，非硬编码。 补充：破发 + 有绿鞋 9 只里只有 3 只回到发行价附近。</div></div>
     <h3 style="font-size:15px;margin:20px 0 4px">三、盘中形态怎么应对（数据边界如实说明）</h3>
     <div class="obs"><div class="o"><b>暗盘开盘后 15 分钟（约 16:30 前）</b><span>先别急着全平：用这 15 分钟看方向——若开盘即冲高后回落幅度 &gt; 开盘价的 5%，按『高开低走』处理，直接清</span></div><div class="o"><b>高开低走（冲高后跌破开盘价）</b><span>不恋战：本档动作打对折执行（示例：原本留一半，改成只留 1/4），余量设『跌破开盘价 3% 即清』</span></div><div class="o"><b>低开高走（先跌后收复开盘价并放量）</b><span>可给该股额外 15 分钟观察窗；若收复后站上开盘价，按本档动作正常执行</span></div><div class="o"><b>全程缩量横盘</b><span>以本档动作为准，不因『看起来没跌』拖延——缩量横盘在暗盘里最常见的结局是首日开盘直接低开</span></div><div class="o"><b>数据边界（重要）</b><span>本站取不到暗盘的分时/最高/最低/成交量，所以『这只暗盘会高开低走还是低开高走』<b>无法用数据预测</b>；以上是执行纪律，不是预测。请以你券商 App 的实时报价为准（各券商暗盘独立撮合、价格不同）。</span></div></div>
     <h3 style="font-size:15px;margin:22px 0 6px">四、三个最容易亏钱的想当然（用实测数据回答）</h3>
@@ -251,13 +258,13 @@ table.bands tr.g-split td.bname{color:var(--accent-ink)}
     </section>
 
 <section><h2>S1 招股期 · 计算过程（速览）</h2>
-      <table><tr><th>步骤</th><th>增量</th><th>说明 / 理由</th></tr><tr><td class="k"><span class="tip" data-tip="招股期还没公布超购数据，缺了最重要的参考，只能靠赛道、机制、入场费这些先给一个方向性的「宽区间」，不硬给点位——信息不够就别装精确。">基准区间(赛道选档)<i class="q">?</i></span></td><td class="v flat">—</td><td class="base">赛道偏乐观→乐观档 → [+0%, +18%]（名称含科技/半导体/机器人等关键词） <span class="info">→ [+0.0% ~ +18.0%]</span></td></tr><tr><td class="k"><span class="tip" data-tip="保荐人 = 帮公司上市的券商（投行）。看它过去保荐的新股首日表现好不好：战绩强的给一点小加分、差的扣一点。权重故意压得很小，因为这是统计规律、不是保证。">保荐人战绩<i class="q">?</i></span></td><td class="v neg">-0.9%</td><td class="delta">历史首日均值 +9.4% vs 基准 +15.2% → 偏离 -5.8% ×0.15=-0.9% <span class="info">→ [-0.9% ~ +17.1%]</span></td></tr><tr><td class="k"><span class="tip" data-tip="基石投资者 = 提前签约、承诺拿货并锁定一段时间（通常 6 个月）的大机构。它们认购的比例越高，说明专业机构越看好、上市后短期抛压也越小。做法是按「基石占比 减 市场平均 35%」来微调，权重保守。">基石配售<i class="q">?</i></span></td><td class="v neg">-2.4%</td><td class="delta">基石占比 14.8% vs 基准 35% → 偏离 -20.2pt ×0.12=-2.4% <span class="info">→ [-3.3% ~ +14.7%]</span></td></tr></table>
+      <table><tr><th>步骤</th><th>增量</th><th>说明 / 理由</th></tr><tr><td class="k"><span class="tip" data-tip="招股期还没公布超购数据，缺了最重要的参考，只能靠赛道、机制、入场费这些先给一个方向性的「宽区间」，不硬给点位——信息不够就别装精确。">基准区间(赛道选档)<i class="q">?</i></span></td><td class="v flat">—</td><td class="base">赛道偏乐观→乐观档 → [+0%, +18%]（名称含科技/半导体/机器人等关键词） <span class="info">→ [+0.0% ~ +18.0%]</span></td></tr><tr><td class="k"><span class="tip" data-tip="保荐人 = 帮公司上市的券商（投行）。看它过去保荐的新股首日表现好不好：战绩强的给一点小加分、差的扣一点。权重故意压得很小，因为这是统计规律、不是保证。">保荐人战绩<i class="q">?</i></span></td><td class="v neg">-2.6%</td><td class="delta">历史首日均值 +17.5% vs 基准 +35.1% → 偏离 -17.6% ×0.15=-2.6% <span class="info">→ [-2.6% ~ +15.4%]</span></td></tr><tr><td class="k"><span class="tip" data-tip="基石投资者 = 提前签约、承诺拿货并锁定一段时间（通常 6 个月）的大机构。它们认购的比例越高，说明专业机构越看好、上市后短期抛压也越小。做法是按「基石占比 减 市场平均 35%」来微调，权重保守。">基石配售<i class="q">?</i></span></td><td class="v neg">-2.4%</td><td class="delta">基石占比 14.8% vs 基准 35% → 偏离 -20.2pt ×0.12=-2.4% <span class="info">→ [-5.0% ~ +13.0%]</span></td></tr></table>
       <div class="note">看不懂某一行？把鼠标停在<b>步骤名</b>上，会用大白话解释这个因子是干什么的。</div></section>
 <section><h2>S2 中签后 · 计算过程（速览）</h2>
-      <table><tr><th>步骤</th><th>增量</th><th>说明 / 理由</th></tr><tr><td class="k"><span class="tip" data-tip="超购 = 认购量 ÷ 发行量。比如发行 1 亿股、大家认购了 20 亿股 = 超购 20 倍。超购越高说明抢的人越多、越难中签，上市后通常也越容易被炒高。我们把超购分成 7 档，直接看历史上「同样热度」的新股暗盘平均涨多少——这是整个模型最重要的一条参考。">超购分档中枢<i class="q">?</i></span></td><td class="v neg">-1.7%</td><td class="base">公开超购 476.56 倍 → 100–500倍（近12月 n=12）；该档暗盘中位 -1.7%、[P25,P75]=[-13.6%, +11.1%]</td></tr><tr><td class="k"><span class="tip" data-tip="在「超购热度」这条主线之外，再叠加保荐人、基石、国配、赛道、规模这些更细的特征：看它们在同一热度档里还能额外带来多少平均涨跌，再补上去。样本太少的档就不修，免得被噪声带偏。">残差分层修正<i class="q">?</i></span></td><td class="v pos">+10.0%</td><td class="delta">超购档之外的边际信息（保荐人/基石/国配/赛道/规模档位残差均值）合计 +10.0% → [sponsor:neg(4.31); corner:low(48.45); intl:mid(22.91); sector:pos(11.3); size:pos(17.3)]</td></tr><tr><td class="k"><span class="tip" data-tip="恒生指数当天涨还是跌。大盘好，所有新股的情绪一起水涨船高；大盘差则相反。按恒指涨跌幅乘一个小系数来微调。">大盘环境<i class="q">?</i></span></td><td class="v neg">-0.3%</td><td class="delta">恒指 -1.0% ×0.3 = -0.3%</td></tr></table>
+      <table><tr><th>步骤</th><th>增量</th><th>说明 / 理由</th></tr><tr><td class="k"><span class="tip" data-tip="超购 = 认购量 ÷ 发行量。比如发行 1 亿股、大家认购了 20 亿股 = 超购 20 倍。超购越高说明抢的人越多、越难中签，上市后通常也越容易被炒高。我们把超购分成 7 档，直接看历史上「同样热度」的新股暗盘平均涨多少——这是整个模型最重要的一条参考。">超购分档中枢<i class="q">?</i></span></td><td class="v neg">-1.7%</td><td class="base">公开超购 476.56 倍 → 100–500倍（近12月 n=12）；该档暗盘中位 -1.7%、[P25,P75]=[-13.6%, +11.1%]</td></tr><tr><td class="k"><span class="tip" data-tip="在「超购热度」这条主线之外，再叠加保荐人、基石、国配、赛道、规模这些更细的特征：看它们在同一热度档里还能额外带来多少平均涨跌，再补上去。样本太少的档就不修，免得被噪声带偏。">残差分层修正<i class="q">?</i></span></td><td class="v pos">+10.0%</td><td class="delta">超购档之外的边际信息（保荐人/基石/国配/赛道/规模档位残差均值）合计 +10.0% → [sponsor:neg(5.7); corner:low(48.45); intl:mid(22.91); sector:pos(11.3); size:pos(17.3)]</td></tr><tr><td class="k"><span class="tip" data-tip="恒生指数当天涨还是跌。大盘好，所有新股的情绪一起水涨船高；大盘差则相反。按恒指涨跌幅乘一个小系数来微调。">大盘环境<i class="q">?</i></span></td><td class="v neg">-0.3%</td><td class="delta">恒指 -1.0% ×0.3 = -0.3%</td></tr></table>
       <div class="note">看不懂某一行？把鼠标停在<b>步骤名</b>上，会用大白话解释这个因子是干什么的。</div></section>
 <section><h2>S3 暗盘后 · 计算过程（速览）</h2>
-      <table><tr><th>步骤</th><th>增量</th><th>说明 / 理由</th></tr><tr><td class="k"><span class="tip" data-tip="暗盘涨跌落在正常区间（−5% ~ +50%）内时，就以暗盘的实际表现为锚，不再额外调整。">常规情形<i class="q">?</i></span></td><td class="v flat">+0.0%</td><td class="delta">暗盘 ±50% 内 → 以暗盘为锚，±10%</td></tr><tr><td class="k"><span class="tip" data-tip="恒生指数前一晚（或当天）涨还是跌。大盘好，所有新股的情绪一起水涨船高；大盘差则相反。按恒指涨跌幅乘一个小系数来微调。">隔夜大盘<i class="q">?</i></span></td><td class="v neg">-0.4%</td><td class="delta">恒指 -1.0% ×0.4 = -0.4%</td></tr><tr><td class="k"><span class="tip" data-tip="保荐人 = 帮公司上市的券商（投行）。看它过去保荐的新股首日表现好不好：战绩强的给一点小加分、差的扣一点。权重故意压得很小，因为这是统计规律、不是保证。">保荐人战绩(首日口径)<i class="q">?</i></span></td><td class="v neg">-1.2%</td><td class="delta">历史首日均值 +9.4% vs 基准 +15.2% → -1.2%</td></tr><tr><td class="k"><span class="tip" data-tip="基石投资者 = 提前签约、承诺拿货并锁定一段时间（通常 6 个月）的大机构。它们认购的比例越高，说明专业机构越看好、上市后短期抛压也越小。做法是按「基石占比 减 市场平均 35%」来微调，权重保守。">基石配售(首日口径)<i class="q">?</i></span></td><td class="v neg">-2.4%</td><td class="delta">基石占比 14.8% vs 35% → -2.4%</td></tr></table>
+      <table><tr><th>步骤</th><th>增量</th><th>说明 / 理由</th></tr><tr><td class="k"><span class="tip" data-tip="暗盘涨跌落在正常区间（−5% ~ +50%）内时，就以暗盘的实际表现为锚，不再额外调整。">常规情形<i class="q">?</i></span></td><td class="v flat">+0.0%</td><td class="delta">暗盘 ±50% 内 → 以暗盘为锚，±10%</td></tr><tr><td class="k"><span class="tip" data-tip="恒生指数前一晚（或当天）涨还是跌。大盘好，所有新股的情绪一起水涨船高；大盘差则相反。按恒指涨跌幅乘一个小系数来微调。">隔夜大盘<i class="q">?</i></span></td><td class="v neg">-0.4%</td><td class="delta">恒指 -1.0% ×0.4 = -0.4%</td></tr><tr><td class="k"><span class="tip" data-tip="保荐人 = 帮公司上市的券商（投行）。看它过去保荐的新股首日表现好不好：战绩强的给一点小加分、差的扣一点。权重故意压得很小，因为这是统计规律、不是保证。">保荐人战绩(首日口径)<i class="q">?</i></span></td><td class="v neg">-3.5%</td><td class="delta">历史首日均值 +17.5% vs 基准 +35.1% → -3.5%</td></tr><tr><td class="k"><span class="tip" data-tip="基石投资者 = 提前签约、承诺拿货并锁定一段时间（通常 6 个月）的大机构。它们认购的比例越高，说明专业机构越看好、上市后短期抛压也越小。做法是按「基石占比 减 市场平均 35%」来微调，权重保守。">基石配售(首日口径)<i class="q">?</i></span></td><td class="v neg">-2.4%</td><td class="delta">基石占比 14.8% vs 35% → -2.4%</td></tr></table>
       <div class="note">看不懂某一行？把鼠标停在<b>步骤名</b>上，会用大白话解释这个因子是干什么的。</div></section>
 <section><h2>S1 招股期 · 详细计算式</h2>
       <div class="calcwrap"><div class="calc c-base">
@@ -270,17 +277,17 @@ table.bands tr.g-split td.bname{color:var(--accent-ink)}
           </div></div><div class="calc c-delta">
           <div class="cno">2</div>
           <div class="cbody">
-            <div class="ck"><span class="tip" data-tip="保荐人 = 帮公司上市的券商（投行）。看它过去保荐的新股首日表现好不好：战绩强的给一点小加分、差的扣一点。权重故意压得很小，因为这是统计规律、不是保证。">保荐人战绩<i class="q">?</i></span><span class="ctag">增量</span><span class="cv neg">-0.87%</span></div>
-            <div class="cform"><span class="cform-l">计算式</span><code class="codetip" data-tip="保荐人 = 帮公司上市的券商（投行）。看它过去保荐的新股首日表现好不好：战绩强的给一点小加分、差的扣一点。权重故意压得很小，因为这是统计规律、不是保证。">(9.39% − 15.21%) × 0.15 = -0.87% → clamp(±8) = -0.87%</code></div>
-            <div class="cd">历史首日均值 +9.4% vs 基准 +15.2% → 偏离 -5.8% ×0.15=-0.9%</div>
-            <div class="clohi">→ 累计区间 [-0.9% ~ +17.1%]</div>
+            <div class="ck"><span class="tip" data-tip="保荐人 = 帮公司上市的券商（投行）。看它过去保荐的新股首日表现好不好：战绩强的给一点小加分、差的扣一点。权重故意压得很小，因为这是统计规律、不是保证。">保荐人战绩<i class="q">?</i></span><span class="ctag">增量</span><span class="cv neg">-2.63%</span></div>
+            <div class="cform"><span class="cform-l">计算式</span><code class="codetip" data-tip="保荐人 = 帮公司上市的券商（投行）。看它过去保荐的新股首日表现好不好：战绩强的给一点小加分、差的扣一点。权重故意压得很小，因为这是统计规律、不是保证。">(17.5% − 35.06%) × 0.15 = -2.63% → clamp(±8) = -2.63%</code></div>
+            <div class="cd">历史首日均值 +17.5% vs 基准 +35.1% → 偏离 -17.6% ×0.15=-2.6%</div>
+            <div class="clohi">→ 累计区间 [-2.6% ~ +15.4%]</div>
           </div></div><div class="calc c-delta">
           <div class="cno">3</div>
           <div class="cbody">
             <div class="ck"><span class="tip" data-tip="基石投资者 = 提前签约、承诺拿货并锁定一段时间（通常 6 个月）的大机构。它们认购的比例越高，说明专业机构越看好、上市后短期抛压也越小。做法是按「基石占比 减 市场平均 35%」来微调，权重保守。">基石配售<i class="q">?</i></span><span class="ctag">增量</span><span class="cv neg">-2.42%</span></div>
             <div class="cform"><span class="cform-l">计算式</span><code class="codetip" data-tip="基石投资者 = 提前签约、承诺拿货并锁定一段时间（通常 6 个月）的大机构。它们认购的比例越高，说明专业机构越看好、上市后短期抛压也越小。做法是按「基石占比 减 市场平均 35%」来微调，权重保守。">(14.8% − 35%) × 0.12 = -2.42% → clamp(±6) = -2.42%</code></div>
             <div class="cd">基石占比 14.8% vs 基准 35% → 偏离 -20.2pt ×0.12=-2.4%</div>
-            <div class="clohi">→ 累计区间 [-3.3% ~ +14.7%]</div>
+            <div class="clohi">→ 累计区间 [-5.0% ~ +13.0%]</div>
           </div></div></div>
       <div class="note">每一行 = 一个因子/修正项的「输入 → 公式 → 代入 → 输出」。带「累计区间」的最后一行端点必须等于下方三阶段结论的区间。悬停<b>因子名或计算式</b>可看大白话解释。</div>
     </section>
@@ -296,8 +303,8 @@ table.bands tr.g-split td.bname{color:var(--accent-ink)}
           <div class="cno">2</div>
           <div class="cbody">
             <div class="ck"><span class="tip" data-tip="在「超购热度」这条主线之外，再叠加保荐人、基石、国配、赛道、规模这些更细的特征：看它们在同一热度档里还能额外带来多少平均涨跌，再补上去。样本太少的档就不修，免得被噪声带偏。">残差分层修正<i class="q">?</i></span><span class="ctag">增量</span><span class="cv pos">+10%</span></div>
-            <div class="cform"><span class="cform-l">计算式</span><code class="codetip" data-tip="在「超购热度」这条主线之外，再叠加保荐人、基石、国配、赛道、规模这些更细的特征：看它们在同一热度档里还能额外带来多少平均涨跌，再补上去。样本太少的档就不修，免得被噪声带偏。">各因子档位残差均值: sponsor[neg]=4.31% (n=45); corner[low]=48.45% (n=10); intl[mid]=22.91% (n=38); sector[pos]=11.3% (n=59); size[pos]=17.3% (n=75)；合计 corr = Σ = 10%</code></div>
-            <div class="cd">超购档之外的边际信息（保荐人/基石/国配/赛道/规模档位残差均值）合计 +10.0% → [sponsor:neg(4.31); corner:low(48.45); intl:mid(22.91); sector:pos(11.3); size:pos(17.3)]</div>
+            <div class="cform"><span class="cform-l">计算式</span><code class="codetip" data-tip="在「超购热度」这条主线之外，再叠加保荐人、基石、国配、赛道、规模这些更细的特征：看它们在同一热度档里还能额外带来多少平均涨跌，再补上去。样本太少的档就不修，免得被噪声带偏。">各因子档位残差均值: sponsor[neg]=5.7% (n=91); corner[low]=48.45% (n=10); intl[mid]=22.91% (n=38); sector[pos]=11.3% (n=59); size[pos]=17.3% (n=75)；合计 corr = Σ = 10%</code></div>
+            <div class="cd">超购档之外的边际信息（保荐人/基石/国配/赛道/规模档位残差均值）合计 +10.0% → [sponsor:neg(5.7); corner:low(48.45); intl:mid(22.91); sector:pos(11.3); size:pos(17.3)]</div>
             
           </div></div><div class="calc c-delta">
           <div class="cno">3</div>
@@ -327,9 +334,9 @@ table.bands tr.g-split td.bname{color:var(--accent-ink)}
           </div></div><div class="calc c-delta">
           <div class="cno">3</div>
           <div class="cbody">
-            <div class="ck"><span class="tip" data-tip="保荐人 = 帮公司上市的券商（投行）。看它过去保荐的新股首日表现好不好：战绩强的给一点小加分、差的扣一点。权重故意压得很小，因为这是统计规律、不是保证。">保荐人战绩(首日口径)<i class="q">?</i></span><span class="ctag">增量</span><span class="cv neg">-1.16%</span></div>
-            <div class="cform"><span class="cform-l">计算式</span><code class="codetip" data-tip="保荐人 = 帮公司上市的券商（投行）。看它过去保荐的新股首日表现好不好：战绩强的给一点小加分、差的扣一点。权重故意压得很小，因为这是统计规律、不是保证。">(9.39% − 15.21%) × 0.2 = -1.16% (clamp±10)</code></div>
-            <div class="cd">历史首日均值 +9.4% vs 基准 +15.2% → -1.2%</div>
+            <div class="ck"><span class="tip" data-tip="保荐人 = 帮公司上市的券商（投行）。看它过去保荐的新股首日表现好不好：战绩强的给一点小加分、差的扣一点。权重故意压得很小，因为这是统计规律、不是保证。">保荐人战绩(首日口径)<i class="q">?</i></span><span class="ctag">增量</span><span class="cv neg">-3.51%</span></div>
+            <div class="cform"><span class="cform-l">计算式</span><code class="codetip" data-tip="保荐人 = 帮公司上市的券商（投行）。看它过去保荐的新股首日表现好不好：战绩强的给一点小加分、差的扣一点。权重故意压得很小，因为这是统计规律、不是保证。">(17.5% − 35.06%) × 0.2 = -3.51% (clamp±10)</code></div>
+            <div class="cd">历史首日均值 +17.5% vs 基准 +35.1% → -3.5%</div>
             
           </div></div><div class="calc c-delta">
           <div class="cno">4</div>
@@ -350,7 +357,7 @@ table.bands tr.g-split td.bname{color:var(--accent-ink)}
   <div class="kpi"><div class="n">+29.7%</div><div class="l">长期(12月)中位暗盘（对照）</div></div>
   <div class="kpi"><div class="n">20.8%</div><div class="l">长期(12月)破发率（对照）</div></div>
 </div>
-<div class="note">校准样本量：<span class="tip" data-tip="港股打新的情绪一个月能翻脸——实测 2026 年 5 月暗盘中位 +75.6%，到 9 月已经是 −0.7%。所以不能只用一个固定的历史窗口：本引擎优先用「最近 3 个月」的样本算，某档样本不够就退到「近 6 个月」，再不够才用「近 12 个月」。这样市场一冷，预测立刻跟着降，不用等一整年才反应过来。">分层窗口<i class="q">?</i></span><b>近3月 29 只 → 近6月 73 只 → 近12月 106 只</b>（逐档取第一个够用的窗口）。保荐人实时库覆盖 20 位保荐人，基准 +15.2%。</div>
+<div class="note">校准样本量：<span class="tip" data-tip="港股打新的情绪一个月能翻脸——实测 2026 年 5 月暗盘中位 +75.6%，到 9 月已经是 −0.7%。所以不能只用一个固定的历史窗口：本引擎优先用「最近 3 个月」的样本算，某档样本不够就退到「近 6 个月」，再不够才用「近 12 个月」。这样市场一冷，预测立刻跟着降，不用等一整年才反应过来。">分层窗口<i class="q">?</i></span><b>近3月 29 只 → 近6月 73 只 → 近12月 106 只</b>（逐档取第一个够用的窗口）。保荐人实时库覆盖 20 位保荐人，基准 +35.1%。</div>
 <div class="note">逐月新股数（近12月窗口内）：2026-04:8、2026-05:13、2026-06:24、2026-07:14、2026-08:1、2026-09:7</div>
 <div class="note warn">⚠ 两点必须说明：<b>① FINI 口径</b>——2023 年底港交所 FINI 上线后申购资金仅冻结中签额，超购倍数系统性虚高；本引擎所有阈值均基于 FINI 后样本实时重算，不跨期混用。<b>② 为什么长期窗口对照很重要</b>——近 30 天破发率可能已到 70%，而 12 个月口径还显示「热市」，只看长期口径会严重低估风险；所以本报告的预测中枢走<b>近端优先</b>，长期数字只作对照展示。</div>
 </section>

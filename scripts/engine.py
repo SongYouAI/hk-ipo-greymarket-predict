@@ -189,8 +189,14 @@ def build_sponsor_book(stocks, extras):
     for s in stocks:
         fdc = num(s.get("first_day_close_price")); ipo = num(s.get("ipo_price"))
         if fdc is None or not ipo or ipo <= 0: continue
+        # ⚠️ openPct 为缺失哨兵（None / 精确 0）→ 整行不完整，收盘价同样不可信，剔除。
+        #    实测：大金重工、爱芯元智 的 ipo == first_day_close 精确相等（占位），
+        #    若计入会给其保荐人塞一个假的 0% 收益。真实非 0 开盘的行不受影响。
+        _e = extras.get("stocks", {}).get(s.get("stock_code")) or {}
+        _op = num(_e.get("openPct"))
+        if _op is None or _op == 0: continue
         v = (fdc / ipo - 1) * 100
-        for nm in (extras.get("stocks", {}).get(s.get("stock_code"), {}).get("sp") or []):
+        for nm in (_e.get("sp") or []):
             per.setdefault(nm, []).append(v)
     allv = [v for vs in per.values() for v in vs]
     base = statistics.median(allv) if len(allv) >= 20 else None
@@ -823,6 +829,12 @@ def is_ah(stock):
     return bool(stock.get("is_ah_share")) and bool(stock.get("a_share_code"))
 
 BREAKEVEN_DEPTH = -5.0   # 「温和破发」与「深破发」的分界（实测：A+H 温和破发 3/3 托回发行价）
+HELD_LINE = -2.0         # 「托回发行价附近」的判定线（首日开盘 ≥ −2%）
+# 保荐人「不托价」警示门槛：只看「温和破发 + 有绿鞋」——绿鞋最该生效、别人都能托住的区间。
+# 需同时满足 项目数≥2 且 失败≥2 且 失败率≥50%，防小样本噪音。
+SPONSOR_MIN_N = 2
+SPONSOR_MIN_FAIL = 2
+SPONSOR_FAIL_RATE = 50.0
 
 def breakeven_playbook(stocks, extras):
     """破发处置的**实测判别表**：按「A 股锚 × 破发深度」拆象限，回答
@@ -842,14 +854,19 @@ def breakeven_playbook(stocks, extras):
     for code, v in ex.items():
         o = num(v.get("openPct")); s = by.get(code, {})
         dk = num(s.get("dark_pool_change_pct"))
-        if o is None or o == 0 or dk is None or not num(s.get("ipo_price")): continue
+        # ⚠️ `o == 0` / `dk == 0` 是**缺失值哨兵，不是真实值**（2026-09-27 实测确认）：
+        #    15 只 openPct 精确为 0.0000，其中 爱芯元智（发行价=首日收盘=28.200）、
+        #    大金重工（66.400=66.400）、华健未来（暗盘 0.0000）等同值成对出现 → 抓取失败留下的占位。
+        #    不加这个过滤会把「假 0.0」当成「恰好在发行价开盘」，虚高托回率（曾把真实 n=5 虚报成 n=12）。
+        if o is None or o == 0 or dk is None or dk == 0 or not num(s.get("ipo_price")): continue
         rows.append({"code": code, "name": re.sub(r"[^\x20-\x7e\u4e00-\u9fff]", "", str(s.get("stock_name") or ""))[:12],
                      "dk": dk, "open": o, "gap": round(o - dk, 1),
-                     "ah": is_ah(s), "green": (v.get("pros") or {}).get("hasGreen")})
+                     "ah": is_ah(s), "green": (v.get("pros") or {}).get("hasGreen"),
+                     "sp": v.get("sp") or [], "stab": (v.get("pros") or {}).get("stabilizer")})
     b = [r for r in rows if r["dk"] < 0]
     def quad(ah, mild):
         g = [r for r in b if r["ah"] == ah and ((r["dk"] > BREAKEVEN_DEPTH) == mild)]
-        held = [r for r in g if r["open"] >= -2.0]          # 回到发行价附近（−2% 内）
+        held = [r for r in g if r["open"] >= HELD_LINE]      # 回到发行价附近
         gaps = sorted(r["gap"] for r in g)
         return {"label": ("A+H" if ah else "非 A+H") + (" + 温和破发（−5%~0）" if mild else " + 深破发（≤−5%）"),
                 "n": len(g), "held": len(held),
@@ -857,15 +874,56 @@ def breakeven_playbook(stocks, extras):
                 "worst_gap": gaps[0] if gaps else None,
                 "names": [f"{r['name']} {r['dk']:+.1f}%→{r['open']:+.1f}%" for r in sorted(g, key=lambda x: -x["gap"])]}
     gb = [r for r in b if r["green"] is True]
-    gb_held = [r for r in gb if r["open"] >= -2.0]
+    gb_held = [r for r in gb if r["open"] >= HELD_LINE]
+
+    # ── 保荐人「不托价」记录：只在「温和破发 + 有绿鞋」区间统计
+    #    为什么限定这个区间：深度破发时谁都托不住（那是难度问题，不是态度问题）；
+    #    只有「只需托回 5% 以内」却仍失败，才指向操盘方本身不托价。
+    mild_g = [r for r in b if r["green"] and r["dk"] > BREAKEVEN_DEPTH]
+    mild_fail = [r for r in mild_g if r["open"] < HELD_LINE]
+    sp_frag = {}
+    for r in mild_g:
+        for nm in (r.get("sp") or []):
+            a = sp_frag.setdefault(nm, {"n": 0, "fail": 0, "cases": []})
+            a["n"] += 1
+            if r["open"] < HELD_LINE:
+                a["fail"] += 1
+            a["cases"].append(f"{r['name']} {r['dk']:+.1f}%→{r['open']:+.1f}%")
+    for a in sp_frag.values():
+        a["rate"] = round(a["fail"] / a["n"] * 100, 1)
+        a["watch"] = bool(a["n"] >= SPONSOR_MIN_N and a["fail"] >= SPONSOR_MIN_FAIL
+                          and a["rate"] >= SPONSOR_FAIL_RATE)
+    watch_nm = sorted([nm for nm, a in sp_frag.items() if a["watch"]])
+    wat_n = sum(1 for r in mild_g if any(nm in (r.get("sp") or []) for nm in watch_nm))
+    wat_fail = sum(1 for r in mild_g
+                   if r["open"] < HELD_LINE and any(nm in (r.get("sp") or []) for nm in watch_nm))
+
     return {
         "n": len(b), "clean_n": len(rows),
         "quad": {"ah_mild": quad(True, True), "ah_deep": quad(True, False),
                  "ind_mild": quad(False, True), "ind_deep": quad(False, False)},
         "green": {"n": len(gb), "held": len(gb_held),
                   "med_gap": round(statistics.median([r["gap"] for r in gb]), 1) if gb else None},
+        "mild_green": {"n": len(mild_g), "fail": len(mild_fail),
+                       "wn": wat_n, "wfail": wat_fail, "watch": watch_nm,
+                       "names": [f"{r['name']} {r['dk']:+.1f}%→{r['open']:+.1f}%"
+                                 for r in sorted(mild_fail, key=lambda x: x["open"])]},
+        "sponsors": sp_frag,
         "depth": BREAKEVEN_DEPTH,
     }
+
+def sponsor_watch(target, extras, bp):
+    """本股保荐人是否在「温和破发 + 绿鞋」区间留有反复不托价记录（一票否决级警示）。"""
+    code = target.get("stock_code")
+    mine = (extras.get("stocks", {}).get(code) or {}).get("sp") or []
+    frag = (bp or {}).get("sponsors") or {}
+    out = []
+    for nm in mine:
+        a = frag.get(nm)
+        if a and a.get("watch"):
+            out.append({"name": nm, "n": a["n"], "fail": a["fail"], "rate": a["rate"],
+                        "cases": a["cases"]})
+    return out
 
 def recent_check(stocks, today=None, n=12):
     """最近已上市新股的**实况回测**（每次运行实时重算，严格因果、无未来函数）。
@@ -1047,6 +1105,37 @@ def trade_plan(target, s2, s3, extras, regime, book=None, long_sample=None, yao=
             "plan": "暗盘已深破发 → 直接全清，不等首日、不等绿鞋。",
         }
 
+    # ── 保荐人「不托价」一票否决（老板观察：绿鞋照样崩，是操盘方那边的问题）
+    #    判据限定在「温和破发 + 有绿鞋」区间——深度破发谁都托不住（难度问题），
+    #    只需托回 5% 以内却失败，才指向操盘方本身不托价（态度问题）。
+    sw = sponsor_watch(target, extras, bp)
+    mg = (bp or {}).get("mild_green") or {}
+    if sw:
+        who = "、".join(f"{x['name']}（{x['fail']}/{x['n']} 次未托回）" for x in sw)
+        cases = "；".join(f"{x['name']}：{'、'.join(x['cases'][:4])}" for x in sw)
+        mn, mf = mg.get("n"), mg.get("fail")
+        wn, wf = mg.get("wn"), mg.get("wfail")
+        break_play["mode"] = "no"
+        break_play["qualify"] = False
+        break_play["verdict"] = ("破发即全清：本股保荐人有「不托价」记录"
+                                 + ("（覆盖 A+H 豁免）" if ah else "") + "，不给第二次机会")
+        break_play["why"] = (
+            f"本股保荐人 {who}。「温和破发（−5%~0）+ 有绿鞋」是绿鞋**最该生效**的区间"
+            f"（只需托回 5% 以内），实测该区间 {mn} 只里失败 {mf} 只，"
+            f"其中上述保荐人参与 {wn} 只、失败 {wf} 只，其余 {mn - wn} 只失败 {mf - wf} 只。"
+            f"记录：{cases}。"
+            + (f" 本股是 **A+H**（A 股 {ah_code}），但保荐人因素优先——"
+               "A 股锚救得回「别人操盘」的破发，救不回「自己人不托」的破发。"
+               if ah else ""))
+        break_play["caveat"] = (
+            f"诚实说明样本量：该保荐人参与样本仅 {wn} 只，Fisher 双侧检验 p≈0.10，"
+            "**方向一致但未达统计显著**——这是「警惕信号」，不是定理。"
+            "之所以仍设为**一票否决**，是因为风险极不对称："
+            "走豁免的收益上限只是把 −4% 变成 0%（约 4pt），而失败下限是 −30pt（江西生物 −33.9%、龙丰集团 −16.6%）。"
+            "宁可错杀，不可错放。名单由每次运行的实测数据实时生成，非硬编码。"
+            f" 补充：破发 + 有绿鞋 {gw.get('n')} 只里只有 {gw.get('held')} 只回到发行价附近。")
+        break_play["plan"] = "破发即全清，不等首日、不等绿鞋、不给保荐人第二次机会。"
+
     # ── 三个常见误区（用实测数据回答，不靠嘴说）
     myths = [
         {"t": "「只要有绿鞋的项目，首日就会按发行价开盘」",
@@ -1097,6 +1186,7 @@ def trade_plan(target, s2, s3, extras, regime, book=None, long_sample=None, yao=
         "fees": fees, "fee_allot": round(amount * FEE_ALLOT, 1) if amount else None,
         "scenarios": scenarios, "bands": SELL_BANDS, "intraday": intraday, "expect": expect,
         "is_ah": ah, "ah_code": ah_code, "break_play": break_play, "myths": myths,
+        "sponsor_watch": sw, "mild_green": mg,
         "green_stat": (bp or {}).get("green") or {},
         "quad": (bp or {}).get("quad") or {}, "bp_n": (bp or {}).get("n"),
         "cash_plan": cash_plan, "fin_plan": fin_plan,
@@ -1373,6 +1463,19 @@ def selfcheck(r):
         for m in (p.get("myths") or []):
             if not m.get("fact") or not m.get("why"):
                 errs.append(f"[plan] 误区「{m.get('t')}」缺实测依据")
+        # 保荐人「不托价」警示：有警示就必须已覆盖豁免（否则等于警示了却不执行）
+        sws = p.get("sponsor_watch") or []
+        for x in sws:
+            if not x.get("name") or x.get("n") is None or x.get("fail") is None or x.get("rate") is None:
+                errs.append(f"[plan] 保荐人警示缺 n/fail/rate：{x.get('name')}")
+            if x.get("rate", 0) < SPONSOR_FAIL_RATE or (x.get("fail") or 0) < SPONSOR_MIN_FAIL:
+                errs.append(f"[plan] 保荐人警示 {x.get('name')} 未达门槛却进入名单")
+        if sws and (p.get("break_play") or {}).get("mode") != "no":
+            errs.append("[plan] 有保荐人警示但 break_play.mode ≠ no（警示未生效 = 假绿灯）")
+        if sws and (p.get("break_play") or {}).get("qualify"):
+            errs.append("[plan] 有保荐人警示却仍标 qualify=True（逻辑矛盾）")
+        if not ((p.get("mild_green") or {}).get("n") or 0) and (p.get("mild_green") or {}).get("watch"):
+            errs.append("[plan] mild_green 空却给出 watch 名单")
         # 绿鞋占比合理性（3–30%）：派生路径曾漏防护，算出过 2008% 的荒谬值
         g = p.get("green") or {}
         if g.get("pct") is not None and not (3.0 <= g["pct"] <= 30.0):

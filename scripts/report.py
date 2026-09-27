@@ -154,6 +154,13 @@ table.bands tr.g-split td.bname{color:var(--accent-ink)}
 .bp.ok .bph{color:var(--accent-ink);} .bp.no .bph{color:var(--neg);}
 .bp .bpr{margin-top:5px;color:var(--ink2);} .bp .bpr b{color:var(--mut);font-weight:600;margin-right:6px;}
 .bp .bpr.dim{color:var(--mut);font-size:12.5px;}
+/* 保荐人「不托价」警示（一票否决）：琥珀金，与涨红/跌绿/强调蓝都不冲突 */
+.spw{margin:9px 0 3px;border-radius:11px;padding:10px 12px;font-size:12.5px;line-height:1.72;
+ background:rgba(183,121,31,.085);border:1px solid rgba(183,121,31,.30);color:var(--ink2);}
+.spw .swh{font-weight:650;color:#8a5a12;margin-bottom:5px;font-size:13px;}
+.spw .swi{margin-top:3px;}
+.spw .swi b{color:var(--ink);}
+.spw .swc{margin-top:6px;color:var(--mut);}
 /* 常见误区卡 */
 .myth{border:1px solid var(--line);border-radius:14px;padding:13px 16px;margin-bottom:10px;background:var(--card);}
 .myth .mt{font-weight:650;font-size:13.5px;color:var(--ink);display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;}
@@ -452,10 +459,27 @@ def plan_section(plan, live):
         所以本报告的卖出动作全部按「暗盘实际落点」触发，而不是按预测方向触发。</div></div>'''
 
     bp = plan.get("break_play") or {}
+    sws = plan.get("sponsor_watch") or []
+    sw_html = ""
+    if sws and bp:
+        mg = plan.get("mild_green") or {}
+        rows = "".join(
+            f'<div class="swi">· <b>{esc(x.get("name",""))}</b> ── 在「温和破发（−5%~0）+ 有绿鞋」这个'
+            f'<b>绿鞋最该生效</b>的区间里，<b>{x.get("fail")}/{x.get("n")}</b> 次未把价格托回发行价附近'
+            f'（{x.get("rate")}%）。涉及项目：{esc("、".join(x.get("cases") or []))}。</div>'
+            for x in sws)
+        mn, mf = mg.get("n", 0), mg.get("fail", 0)
+        wn, wf = mg.get("wn", 0), mg.get("wfail", 0)
+        sw_html = (
+            f'<div class="spw"><div class="swh">⚠ 保荐人「不托价」警示 ── 本股触发一票否决，覆盖上面的豁免判定</div>'
+            f'{rows}'
+            f'<div class="swc">该区间全样本 {mn} 只、失败 {mf} 只；上述保荐人参与 {wn} 只、失败 {wf} 只，'
+            f'其余 {mn - wn} 只失败 {mf - wf} 只。名单由每次运行的实测数据实时生成，非硬编码。</div></div>')
     if bp:
         ok = bool(bp.get("qualify"))
         bp_html = (f'<div class="bp {"ok" if ok else "no"}">'
                    f'<div class="bph">{rich(bp.get("verdict", ""))}</div>'
+                   f'{sw_html}'
                    f'<div class="bpr"><b>依据</b>{rich(bp.get("why", ""))}</div>'
                    f'<div class="bpr"><b>动作</b>{rich(bp.get("plan", ""))}</div>'
                    f'<div class="bpr dim"><b>边界</b>{rich(bp.get("caveat", ""))}</div></div>')

@@ -147,6 +147,13 @@ table.bands tr.g-split td.bname{color:var(--accent-ink)}
 .bp.ok .bph{color:var(--accent-ink);} .bp.no .bph{color:var(--neg);}
 .bp .bpr{margin-top:5px;color:var(--ink2);} .bp .bpr b{color:var(--mut);font-weight:600;margin-right:6px;}
 .bp .bpr.dim{color:var(--mut);font-size:12.5px;}
+/* 保荐人「不托价」警示（一票否决）：琥珀金，与涨红/跌绿/强调蓝都不冲突 */
+.spw{margin:9px 0 3px;border-radius:11px;padding:10px 12px;font-size:12.5px;line-height:1.72;
+ background:rgba(183,121,31,.085);border:1px solid rgba(183,121,31,.30);color:var(--ink2);}
+.spw .swh{font-weight:650;color:#8a5a12;margin-bottom:5px;font-size:13px;}
+.spw .swi{margin-top:3px;}
+.spw .swi b{color:var(--ink);}
+.spw .swc{margin-top:6px;color:var(--mut);}
 /* 常见误区卡 */
 .myth{border:1px solid var(--line);border-radius:14px;padding:13px 16px;margin-bottom:10px;background:var(--card);}
 .myth .mt{font-weight:650;font-size:13.5px;color:var(--ink);display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;}
@@ -165,7 +172,7 @@ table.bands tr.g-split td.bname{color:var(--accent-ink)}
 <header>
   <div><h1>罗博特科<span class="code">03757</span></h1>
   <div class="sub">发行价 436.000 ｜ 招股截止 2026-09-24 ｜ 暗盘 2026-09-28 ｜ 上市 2026-09-29</div></div>
-  <div class="sub">生成于 2026-09-27 15:56<br>数据：i668 实时 API + 腾讯行情 + 内置因子库(117)</div>
+  <div class="sub">生成于 2026-09-27 16:11<br>数据：i668 实时 API + 腾讯行情 + 内置因子库(117)</div>
 </header>
 
 <div class="tag">恒指 -1.0%</div>
@@ -176,9 +183,9 @@ table.bands tr.g-split td.bname{color:var(--accent-ink)}
 <div class="grid">
   <div class="card">
       <h3>招股期预测</h3>
-      <div class="range"><span class="lo">+0.1%</span> ~ <span class="hi">+20.1%</span></div>
-      <div class="center">中枢 <b class="base">+10.1%</b> ｜ <span class="stars">★☆☆</span></div>
-      <div class="price">价格 436.436 ~ 523.636 HKD</div>
+      <div class="range"><span class="lo">-1.2%</span> ~ <span class="hi">+18.8%</span></div>
+      <div class="center">中枢 <b class="base">+8.8%</b> ｜ <span class="stars">★☆☆</span></div>
+      <div class="price">价格 430.768 ~ 517.968 HKD</div>
     </div>
   <div class="card cur"><span class="badge b-cur">当前</span>
       <h3>中签后预测（暗盘收盘）</h3>
@@ -191,7 +198,7 @@ table.bands tr.g-split td.bname{color:var(--accent-ink)}
 
 <section><h2>三阶段预测结论</h2>
 <table><tr><th>阶段</th><th>预测区间(相对发行价)</th><th>中枢</th><th>置信</th><th>价格区间(HKD)</th></tr>
-<tr><td class="k">S1 招股期</td><td><span class="lo">+0.1%</span> ~ <span class="hi">+20.1%</span></td><td class="base">+10.1%</td><td><span class="stars">★☆☆</span></td><td class="v">436.436 ~ 523.636</td></tr>
+<tr><td class="k">S1 招股期</td><td><span class="lo">-1.2%</span> ~ <span class="hi">+18.8%</span></td><td class="base">+8.8%</td><td><span class="stars">★☆☆</span></td><td class="v">430.768 ~ 517.968</td></tr>
 <tr><td class="k">S2 中签后·暗盘收盘</td><td><span class="lo">-0.4%</span> ~ <span class="hi">+21.6%</span></td><td class="base">+9.6%</td><td><span class="stars">★★☆</span></td><td class="v">434.256 ~ 530.176</td></tr>
 <tr><td class="k">S3 暗盘后·首日开盘</td><td colspan="4" class="info">数据不足 / 未到阶段</td></tr>
 </table>
@@ -246,7 +253,7 @@ table.bands tr.g-split td.bname{color:var(--accent-ink)}
     </section>
 
 <section><h2>S1 招股期 · 计算过程（速览）</h2>
-      <table><tr><th>步骤</th><th>增量</th><th>说明 / 理由</th></tr><tr><td class="k"><span class="tip" data-tip="有些公司同时在 A 股（内地）和港股上市。A 股现价比港股发行价贵得越多，说明港股这边相对「便宜」，上市后往 A 股靠拢的概率越大、通常越暖。做法是拿「A 股比发行价贵多少」乘一个系数（0.238）当预测起点。注意：折价深 ≠ 一定不破发，只是平均而言更暖。">A+H 溢价锚<i class="q">?</i></span></td><td class="v flat">—</td><td class="base">A 股较发行价溢价 +41.5% → 回归隐含中枢 +9.9%（斜率0.238、截断±12pt）；区间半宽 10.0pt <span class="info">→ [-0.1% ~ +19.9%]</span></td></tr><tr><td class="k"><span class="tip" data-tip="保荐人 = 帮公司上市的券商（投行）。看它过去保荐的新股首日表现好不好：战绩强的给一点小加分、差的扣一点。权重故意压得很小，因为这是统计规律、不是保证。">保荐人战绩<i class="q">?</i></span></td><td class="v pos">+0.2%</td><td class="delta">历史首日均值 +16.6% vs 基准 +15.2% → 偏离 +1.4% ×0.15=+0.2% <span class="info">→ [+0.1% ~ +20.1%]</span></td></tr></table>
+      <table><tr><th>步骤</th><th>增量</th><th>说明 / 理由</th></tr><tr><td class="k"><span class="tip" data-tip="有些公司同时在 A 股（内地）和港股上市。A 股现价比港股发行价贵得越多，说明港股这边相对「便宜」，上市后往 A 股靠拢的概率越大、通常越暖。做法是拿「A 股比发行价贵多少」乘一个系数（0.238）当预测起点。注意：折价深 ≠ 一定不破发，只是平均而言更暖。">A+H 溢价锚<i class="q">?</i></span></td><td class="v flat">—</td><td class="base">A 股较发行价溢价 +41.5% → 回归隐含中枢 +9.9%（斜率0.238、截断±12pt）；区间半宽 10.0pt <span class="info">→ [-0.1% ~ +19.9%]</span></td></tr><tr><td class="k"><span class="tip" data-tip="保荐人 = 帮公司上市的券商（投行）。看它过去保荐的新股首日表现好不好：战绩强的给一点小加分、差的扣一点。权重故意压得很小，因为这是统计规律、不是保证。">保荐人战绩<i class="q">?</i></span></td><td class="v neg">-1.1%</td><td class="delta">历史首日均值 +28.0% vs 基准 +35.1% → 偏离 -7.0% ×0.15=-1.1% <span class="info">→ [-1.2% ~ +18.8%]</span></td></tr></table>
       <div class="note">看不懂某一行？把鼠标停在<b>步骤名</b>上，会用大白话解释这个因子是干什么的。</div></section>
 <section><h2>S2 中签后 · 计算过程（速览）</h2>
       <table><tr><th>步骤</th><th>增量</th><th>说明 / 理由</th></tr><tr><td class="k"><span class="tip" data-tip="有些公司同时在 A 股（内地）和港股上市。A 股现价比港股发行价贵得越多，说明港股这边相对「便宜」，上市后往 A 股靠拢的概率越大、通常越暖。做法是拿「A 股比发行价贵多少」乘一个系数（0.238）当预测起点。注意：折价深 ≠ 一定不破发，只是平均而言更暖。">A+H 折价档中枢(降级)<i class="q">?</i></span></td><td class="v pos">+9.9%</td><td class="base">⚠ 站点未录入超购 → 改用 A+H 隐含中枢 +9.9%（半宽 10/12pt）</td></tr><tr><td class="k"><span class="tip" data-tip="在「超购热度」这条主线之外，再叠加保荐人、基石、国配、赛道、规模这些更细的特征：看它们在同一热度档里还能额外带来多少平均涨跌，再补上去。样本太少的档就不修，免得被噪声带偏。">残差分层修正<i class="q">?</i></span></td><td class="v flat">—</td><td class="info">超购档之外的因子档位样本不足或方向互抵 → 不强行修正（避免噪声）</td></tr><tr><td class="k"><span class="tip" data-tip="恒生指数当天涨还是跌。大盘好，所有新股的情绪一起水涨船高；大盘差则相反。按恒指涨跌幅乘一个小系数来微调。">大盘环境<i class="q">?</i></span></td><td class="v neg">-0.3%</td><td class="delta">恒指 -1.0% ×0.3 = -0.3%</td></tr></table>
@@ -263,10 +270,10 @@ table.bands tr.g-split td.bname{color:var(--accent-ink)}
           </div></div><div class="calc c-delta">
           <div class="cno">2</div>
           <div class="cbody">
-            <div class="ck"><span class="tip" data-tip="保荐人 = 帮公司上市的券商（投行）。看它过去保荐的新股首日表现好不好：战绩强的给一点小加分、差的扣一点。权重故意压得很小，因为这是统计规律、不是保证。">保荐人战绩<i class="q">?</i></span><span class="ctag">增量</span><span class="cv pos">+0.21%</span></div>
-            <div class="cform"><span class="cform-l">计算式</span><code class="codetip" data-tip="保荐人 = 帮公司上市的券商（投行）。看它过去保荐的新股首日表现好不好：战绩强的给一点小加分、差的扣一点。权重故意压得很小，因为这是统计规律、不是保证。">(16.63% − 15.21%) × 0.15 = 0.21% → clamp(±8) = 0.21%</code></div>
-            <div class="cd">历史首日均值 +16.6% vs 基准 +15.2% → 偏离 +1.4% ×0.15=+0.2%</div>
-            <div class="clohi">→ 累计区间 [+0.1% ~ +20.1%]</div>
+            <div class="ck"><span class="tip" data-tip="保荐人 = 帮公司上市的券商（投行）。看它过去保荐的新股首日表现好不好：战绩强的给一点小加分、差的扣一点。权重故意压得很小，因为这是统计规律、不是保证。">保荐人战绩<i class="q">?</i></span><span class="ctag">增量</span><span class="cv neg">-1.06%</span></div>
+            <div class="cform"><span class="cform-l">计算式</span><code class="codetip" data-tip="保荐人 = 帮公司上市的券商（投行）。看它过去保荐的新股首日表现好不好：战绩强的给一点小加分、差的扣一点。权重故意压得很小，因为这是统计规律、不是保证。">(28.02% − 35.06%) × 0.15 = -1.06% → clamp(±8) = -1.06%</code></div>
+            <div class="cd">历史首日均值 +28.0% vs 基准 +35.1% → 偏离 -7.0% ×0.15=-1.1%</div>
+            <div class="clohi">→ 累计区间 [-1.2% ~ +18.8%]</div>
           </div></div></div>
       <div class="note">每一行 = 一个因子/修正项的「输入 → 公式 → 代入 → 输出」。带「累计区间」的最后一行端点必须等于下方三阶段结论的区间。悬停<b>因子名或计算式</b>可看大白话解释。</div>
     </section>
@@ -305,7 +312,7 @@ table.bands tr.g-split td.bname{color:var(--accent-ink)}
   <div class="kpi"><div class="n">+29.7%</div><div class="l">长期(12月)中位暗盘（对照）</div></div>
   <div class="kpi"><div class="n">20.8%</div><div class="l">长期(12月)破发率（对照）</div></div>
 </div>
-<div class="note">校准样本量：<span class="tip" data-tip="港股打新的情绪一个月能翻脸——实测 2026 年 5 月暗盘中位 +75.6%，到 9 月已经是 −0.7%。所以不能只用一个固定的历史窗口：本引擎优先用「最近 3 个月」的样本算，某档样本不够就退到「近 6 个月」，再不够才用「近 12 个月」。这样市场一冷，预测立刻跟着降，不用等一整年才反应过来。">分层窗口<i class="q">?</i></span><b>近3月 29 只 → 近6月 73 只 → 近12月 106 只</b>（逐档取第一个够用的窗口）。保荐人实时库覆盖 20 位保荐人，基准 +15.2%。</div>
+<div class="note">校准样本量：<span class="tip" data-tip="港股打新的情绪一个月能翻脸——实测 2026 年 5 月暗盘中位 +75.6%，到 9 月已经是 −0.7%。所以不能只用一个固定的历史窗口：本引擎优先用「最近 3 个月」的样本算，某档样本不够就退到「近 6 个月」，再不够才用「近 12 个月」。这样市场一冷，预测立刻跟着降，不用等一整年才反应过来。">分层窗口<i class="q">?</i></span><b>近3月 29 只 → 近6月 73 只 → 近12月 106 只</b>（逐档取第一个够用的窗口）。保荐人实时库覆盖 20 位保荐人，基准 +35.1%。</div>
 <div class="note">逐月新股数（近12月窗口内）：2026-04:8、2026-05:13、2026-06:24、2026-07:14、2026-08:1、2026-09:7</div>
 <div class="note warn">⚠ 两点必须说明：<b>① FINI 口径</b>——2023 年底港交所 FINI 上线后申购资金仅冻结中签额，超购倍数系统性虚高；本引擎所有阈值均基于 FINI 后样本实时重算，不跨期混用。<b>② 为什么长期窗口对照很重要</b>——近 30 天破发率可能已到 70%，而 12 个月口径还显示「热市」，只看长期口径会严重低估风险；所以本报告的预测中枢走<b>近端优先</b>，长期数字只作对照展示。</div>
 </section>
