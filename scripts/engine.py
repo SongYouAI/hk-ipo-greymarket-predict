@@ -13,11 +13,19 @@
       既避免与桶内已内化的均值重复计价，又吃到真实边际信息。
   [C] S3 妖股系数 0.7（裸常数）→ 用样本实测
       median(首日开盘% / 暗盘价格%) 标定。
-  [D] S1 的 18C 三重计价 → 合并为单次 +5。
+  [D] S1 的 18C 固定加分 → 实证证伪后删除（同赛道内 18C 相对非 18C 中位
+      为负：近12月 −22.8pt、近6月 −60pt；近3月样本不足做负修正 → 归零）。
   [E] A+H 两处口径不一致 → 统一为回归斜率 0.238、截断 ±12。
   [F] FLAT 兜底中位数 +29.7%（右偏误导）→ 改为中性(≈0)宽区间。
   [G] 动态校准：情绪周期(冷热市)整体平移中位数；标注 FINI 后超购虚高。
   [H] 输出「暗盘收盘价区间(主) + 暗盘开盘价情绪初判(辅)」。
+  [I] S1 静态赛道桶 → 「长期先验 × 近30天情绪」各半（2026-09-27 因果回测）：
+      n=85 全窗口 MAE 52.2（静态 56.4 / 中性0 59.0）、中位偏差 +0.3≈无偏、
+      方向 64/85；最近12只 18.0（静态 17.8、中性0 14.7）。
+      ⚠ 「赛道分层实测桶」同期被回测证伪（最近12只 MAE 30.9）：小样本赛道层
+      的分层窗口在市况切换时滞后近 3 个月，分层机制救不了它 → 弃用。
+      S2 无超购兜底与 S1 共用同一基准（同一信息集，先验必须一致），
+      消除旧版「同页 S1 +12.6% vs S2 −0.3%」的自相矛盾。
 
 纯标准库，无第三方依赖。联网取数失败时明确报错，不编造。
 """
@@ -538,14 +546,51 @@ def ah_implied(prem):
 # ---------------------------------------------------------------------------
 # 阶段预测
 # ---------------------------------------------------------------------------
+# S1/S2 共用的「无超购」基准（改造 I，2026-09-27 因果回测驱动，详见文件头 [I]）
+S1_BLEND_W = 0.5     # 长期赛道先验 × 近30天情绪 各半
+S1_SENT_DAYS = 30    # 近端情绪窗（与情绪表盘 d30 同口径）
+S1_SENT_MIN = 3      # 近端样本门槛（与 regime 标签同门槛）
+
+def base_prior(stock, ctx):
+    """非 A+H 且无超购时的统一基准：S1 与 S2 兜底**必须共用**（同一信息集 → 同一先验）。
+
+    口径 = 长期赛道静态带的中点 × 近30天全样本暗盘中位，各 50%。
+    为什么不是纯赛道分层实测：回测证伪——赛道分层桶在市况切换时滞后近 3 个月
+    （最近12只 MAE 30.9 vs 静态 17.8），分层窗口救不了小样本赛道层。
+    为什么不是纯静态：热市偏差 +16pt。为什么不是纯近30天/中性0：热市方向能力全失
+    （中性0 方向命中 22/85）。各半：全窗口 MAE 52.2 最低、中位偏差 +0.3≈无偏。
+    近30天样本 <3 时退化为纯静态先验（不混 0，避免把先验无据减半）。
+    """
+    sec = sector_adj(stock.get("stock_name"), stock.get("listing_chapter"))
+    if sec["v"] > 0:
+        lo0, hi0, pick = 0.0, 18.0, "赛道偏乐观→乐观带"
+    elif sec["v"] < 0:
+        lo0, hi0, pick = -15.0, 5.0, "赛道偏悲观→悲观带"
+    else:
+        lo0, hi0, pick = -10.0, 20.0, "无赛道信号→中性带"
+    mid0 = (lo0 + hi0) / 2
+    half = (hi0 - lo0) / 2
+    d30 = (ctx.get("sent") or {}).get("d30") or {}
+    m30 = d30.get("med") if (d30.get("n") or 0) >= S1_SENT_MIN else None
+    if m30 is None:
+        center = mid0
+        w_txt = f"静态先验中点 {pct(mid0,0)}（近{S1_SENT_DAYS}天样本不足，未混合）"
+        formula = f"center = 静态中点 {mid0}%（近{S1_SENT_DAYS}天 n<3 不混合）"
+    else:
+        center = round(S1_BLEND_W * mid0 + (1 - S1_BLEND_W) * m30, 1)
+        w_txt = f"0.5×静态中点 {pct(mid0,0)} + 0.5×近{S1_SENT_DAYS}天中位 {pct(m30)}"
+        formula = f"center = 0.5×{mid0}% + 0.5×({m30}%) = {center}%"
+    return {"lo": round(center - half, 1), "hi": round(center + half, 1),
+            "center": center, "half": half, "pick": pick, "sec": sec,
+            "m30": m30, "w": w_txt, "formula": formula}
+
 def predict_s1(stock, ctx, extras, book=None):
-    """招股期：方向性宽区间。A+H 优先；否则赛道选档。18C 合并单次 +5。"""
+    """招股期：方向性宽区间。A+H 优先；否则「长期先验×近30天情绪」基准。18C 固定加分已删。"""
     ipo = num(stock.get("ipo_price"))
     if ipo is None or ipo <= 0: return None
     steps = []
     is_ah = bool(stock.get("is_ah_share")) and stock.get("a_share_code")
     prem = ctx.get("ah", {}).get(stock.get("a_share_code")) if is_ah else None
-    sec = sector_adj(stock.get("stock_name"), stock.get("listing_chapter"))
     conf = 1
     if prem is not None:
         center = ah_implied(prem)
@@ -559,29 +604,26 @@ def predict_s1(stock, ctx, extras, book=None):
                       "formula": f"中枢 = clamp({AH_K} × {prem:.1f}%, ±{AH_CAP}) = {center:.1f}%"})
         anchor = {"k": "A+H 溢价锚", "txt": pct(prem), "d": "A 股现价(折港币)相对发行价溢价；隐含中枢截断 ±12pt（与模型统一口径）"}
     else:
-        if sec["v"] > 0:
-            loP, hiP, pick = 0.0, 18.0, "赛道偏乐观→乐观档"
-        elif sec["v"] < 0:
-            loP, hiP, pick = -15.0, 5.0, "赛道偏悲观→悲观档"
-        else:
-            loP, hiP, pick = -10.0, 20.0, "无赛道信号→中性档"
-        steps.append({"k": "基准区间(赛道选档)", "v": None, "type": "base",
-                      "lo": loP, "hi": hiP, "d": f"{pick} → [{pct(loP,0)}, {pct(hiP,0)}]（{sec['why']}）",
-                      "formula": f"赛道系数 sec = {sec['v']} → 选档: {pick}"})
-        anchor = {"k": "赛道方向", "txt": pct(sec["v"], 0), "d": "招股期无超购，按赛道给方向性宽区间"}
+        base = base_prior(stock, ctx)
+        loP, hiP = base["lo"], base["hi"]
+        steps.append({"k": "长期先验×近30天情绪(基准)", "v": None, "type": "base",
+                      "lo": loP, "hi": hiP,
+                      "d": f"{base['pick']}；{base['w']} → 中枢 {pct(base['center'])}、半宽 {base['half']}pt（{base['sec']['why']}）",
+                      "formula": base["formula"]})
+        anchor = {"k": "赛道方向", "txt": pct(base["sec"]["v"], 0), "d": "招股期无超购，按「长期赛道先验×近30天情绪各半」给方向性宽区间"}
     is18c = bool(re.search(r'18C', stock.get("listing_chapter") or ""))
     if is18c:
-        hiP += 5
-        steps.append({"k": "18C 特专科技", "v": 5, "type": "delta",
-                      "lo": round(loP, 1), "hi": round(hiP, 1),
-                      "d": "18C 章节 → 上沿 +5%（已合并单次计入，不再重复）",
-                      "formula": "上沿 +5pt（18C 特专科技章节，合并单次计入，避免重复）"})
+        steps.append({"k": "18C 特专科技(实证不支持加分)", "v": 0, "type": "info",
+                      "d": ("旧规则给 18C 上沿固定 +5pt，已被实测证伪并删除："
+                            f"{ctx.get('c18_note') or '同赛道内 18C 相对非 18C 无稳定溢价'}"
+                            "；近端样本不足以做负修正 → 按「样本不够就不修」纪律不调整"),
+                      "formula": "18C 修正 = 0（实证不支持固定 +5；样本不足以做负修正）"})
     sp = sponsor_adj_target(stock, extras, 0.15, 8, book)
     if sp:
         loP += sp["v"]; hiP += sp["v"]
         steps.append({"k": "保荐人战绩", "v": sp["v"], "type": "delta",
                       "lo": round(loP, 1), "hi": round(hiP, 1),
-                      "d": f"历史首日均值 {pct(sp['avg'])} vs 基准 {pct(sp['base'])} → 偏离 {pct(sp['avg']-sp['base'])} ×{sp['k']}={pct(sp['v'])}",
+                      "d": f"历史首日收盘中位 {pct(sp['avg'])} vs 基准 {pct(sp['base'])} → 偏离 {pct(sp['avg']-sp['base'])} ×{sp['k']}={pct(sp['v'])}",
                       "formula": f"({sp['avg']}% − {sp['base']}%) × {sp['k']} = {sp['raw']}% → clamp(±{sp['cap']}) = {sp['v']}%"})
     cs = cornerstone_adj_target(stock, extras)
     if cs:
@@ -629,10 +671,24 @@ def predict_s2(stock, ctx, extras, buckets, regime, sample_with_res, book=None):
                           "d": f"⚠ 站点未录入超购 → 改用 A+H 隐含中枢 {pct(center)}（半宽 10/12pt）",
                           "formula": f"无超购 → center = clamp({AH_K} × {prem:.1f}%, ±{AH_CAP}) = {center:.1f}%"})
         else:
-            med, dLo, dHi = 0.0, 18.0, 22.0  # 改造 F：中性兜底，不再 +29.7% 误导
-            steps.append({"k": "全样本兜底(中性)", "v": 0.0, "type": "base",
-                          "d": "⚠ 无超购且无 A+H → 中性兜底（中枢≈0、宽区间），不假装精确",
-                          "formula": "无超购无A+H → 中性中枢 0%（不假装精确）"})
+            # 改造 I：与 S1 共用同一基准（同一信息集，先验必须一致），不再中性 0。
+            base = base_prior(stock, ctx)
+            med, dLo, dHi = base["center"], 18.0, 22.0
+            steps.append({"k": "长期先验×近30天情绪(与S1同源)", "v": round(med, 1), "type": "base",
+                          "d": f"⚠ 无超购且无 A+H → 与 S1 共用同一基准（同一信息集，先验必须一致）：{base['w']} → 中枢 {pct(med)}",
+                          "formula": base["formula"]})
+            sp2 = sponsor_adj_target(stock, extras, 0.15, 8, book)
+            if sp2:
+                med += sp2["v"]
+                steps.append({"k": "保荐人战绩", "v": sp2["v"], "type": "delta",
+                              "d": f"历史首日收盘中位 {pct(sp2['avg'])} vs 基准 {pct(sp2['base'])} → 偏离 {pct(sp2['avg']-sp2['base'])} ×{sp2['k']}={pct(sp2['v'])}（与 S1 同口径）",
+                              "formula": f"({sp2['avg']}% − {sp2['base']}%) × {sp2['k']} = {sp2['raw']}% → clamp(±{sp2['cap']}) = {sp2['v']}%"})
+            cs2 = cornerstone_adj_target(stock, extras)
+            if cs2:
+                med += cs2["v"]
+                steps.append({"k": "基石配售", "v": cs2["v"], "type": "delta",
+                              "d": f"基石占比 {cs2['ratio']}% vs 基准 35% → 偏离 {cs2['ratio']-35:.1f}pt ×{cs2['k']}={pct(cs2['v'])}（与 S1 同口径）",
+                              "formula": f"({cs2['ratio']}% − 35%) × {cs2['k']} = {cs2['raw']}% → clamp(±{cs2['cap']}) = {cs2['v']}%"})
         conf = min(conf, 2) if prov else conf
     # 冷热市平移（动态校准）
     shift = regime["shift"]
@@ -657,9 +713,14 @@ def predict_s2(stock, ctx, extras, buckets, regime, sample_with_res, book=None):
                       "d": f"超购档之外的边际信息（保荐人/基石/国配/赛道/规模档位残差均值）合计 {pct(corr)} → [{used}]",
                       "formula": f"各因子档位残差均值: {res_for}；合计 corr = Σ = {corr}%"})
     else:
-        steps.append({"k": "残差分层修正", "v": None, "type": "info",
-                      "d": "超购档之外的因子档位样本不足或方向互抵 → 不强行修正（避免噪声）",
-                      "formula": "Σ(各因子档位残差均值): 样本<5 或方向互抵 → 不修正（避免噪声）"})
+        if over is None:
+            steps.append({"k": "残差分层修正", "v": None, "type": "info",
+                          "d": "无超购 → 无分桶基准，残差无处附着；保荐人/基石个股因子已在上方与 S1 同口径直接计入（不重复计价）",
+                          "formula": "无超购 → 残差机制不适用；因子项走 S1 同口径"})
+        else:
+            steps.append({"k": "残差分层修正", "v": None, "type": "info",
+                          "d": "超购档之外的因子档位样本不足或方向互抵 → 不强行修正（避免噪声）",
+                          "formula": "Σ(各因子档位残差均值): 样本<5 或方向互抵 → 不修正（避免噪声）"})
     # 大盘环境（唯一实时修正项，保留）
     hsi = ctx.get("hsi")
     if hsi is not None:
@@ -1244,6 +1305,21 @@ def run(query, sim_date=None, out=None, no_live=False):
         r["name"] = s.get("stock_name", ""); r["chapter"] = s.get("listing_chapter", "")
         r["stock_meta"] = s
     swr = attach_residuals(long_sample, buckets_long)
+    # 供 S1/S2 统一基准使用的实时上下文：近30天情绪 + 18C 实证注释（动态计算，不写死）
+    ctx["sent"] = sent
+    def _is_tech(r): return sector_adj(r.get("name"), r.get("chapter"))["base"] > 0
+    def _is_18c(r): return bool(re.search(r'18C', r.get("chapter") or ""))
+    t18 = [r["dk"] for r in long_sample if _is_tech(r) and _is_18c(r)]
+    tn8 = [r["dk"] for r in long_sample if _is_tech(r) and not _is_18c(r)]
+    cut_near = datetime.date.today() - datetime.timedelta(days=int(WINDOW_MONTHS_NEAR * 30.5))
+    t18_near = [r["dk"] for r in long_sample
+                if _is_tech(r) and _is_18c(r) and r["ls"] >= cut_near]
+    if t18 and tn8:
+        ctx["c18_note"] = (f"近12月同赛道内 18C 中位 {pct(statistics.median(t18))}（n={len(t18)}）"
+                           f" 反而低于非 18C 的 {pct(statistics.median(tn8))}（n={len(tn8)}）"
+                           f"；近3月 18C 样本 n={len(t18_near)}")
+    else:
+        ctx["c18_note"] = None
     # 预测
     s1 = predict_s1(target, ctx, extras, book)
     s2 = predict_s2(target, ctx, extras, buckets, regime, swr, book)
@@ -1316,7 +1392,7 @@ def _recalc_s3(target, ctx, extras, regime, ratio, book=None):
     sp = sponsor_adj_target(target, extras, 0.2, 10, book)
     if sp:
         base += sp["v"]; steps.append({"k": "保荐人战绩(首日口径)", "v": sp["v"], "type": "delta",
-                      "d": f"历史首日均值 {pct(sp['avg'])} vs 基准 {pct(sp['base'])} → {pct(sp['v'])}",
+                      "d": f"历史首日收盘中位 {pct(sp['avg'])} vs 基准 {pct(sp['base'])} → {pct(sp['v'])}",
                       "formula": f"({sp['avg']}% − {sp['base']}%) × {sp['k']} = {sp['v']}% (clamp±{sp['cap']})"})
     cs = cornerstone_adj_target(target, extras)
     if cs:
@@ -1429,6 +1505,21 @@ def selfcheck(r):
                 errs.append(f"[{k}] 步骤端点与最终区间不符 step={last_step['k']}")
     if r["open"] and r["open"]["lo"] > r["open"]["hi"]:
         errs.append("[open] 开盘初判区间反转")
+    # S1/S2 同源校验（改造 I）：非 A+H 且无超购时两者共用 base_prior，
+    # S2 中枢 − S1 中枢必须 ≈ 恒指项（0.3×hsi），否则「同页两个先验」的自相矛盾复活
+    _t0 = r["target"]
+    if (r.get("s1") and r.get("s2") and not is_ah(_t0)
+            and num(_t0.get("public_offer_subscription_multiple")) is None):
+        _s1c = (r["s1"]["loPct"] + r["s1"]["hiPct"]) / 2
+        _s2c = r["s2"].get("base")
+        _hsi_adj = round(0.3 * (r["ctx"].get("hsi") or 0), 2)
+        if _s2c is not None and abs((_s2c - _s1c) - _hsi_adj) > 0.9:
+            errs.append(f"[S1/S2] 无超购非A+H 应先验同源：S2中枢{_s2c} − S1中枢{round(_s1c,1)} "
+                        f"= {round(_s2c-_s1c,2)} ≠ 恒指项 {_hsi_adj}")
+    # 18C 固定加分已删除（实证证伪）：S1 里任何 18C 步骤的值必须为 0/None
+    for st in (r.get("s1") or {}).get("steps") or []:
+        if "18C" in (st.get("k") or "") and st.get("v") not in (None, 0):
+            errs.append(f"[S1] 18C 固定加分已取消，但步骤「{st.get('k')}」值={st.get('v')}")
     if r["sample_n"] < 50:
         errs.append(f"样本不足 {r['sample_n']}（<50），结论不可靠")
     # 处置方案结构校验（此前 selfcheck 未查 plan，却在终端打印"处置方案结构 均正常" → 假绿灯，现已补实）

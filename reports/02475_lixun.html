@@ -172,7 +172,7 @@ table.bands tr.g-split td.bname{color:var(--accent-ink)}
 <header>
   <div><h1>立讯精密<span class="code">02475</span></h1>
   <div class="sub">发行价 63.280 ｜ 招股截止 2026-07-06 ｜ 暗盘 2026-07-08 ｜ 上市 2026-07-09</div></div>
-  <div class="sub">生成于 2026-09-27 16:26<br>数据：i668 实时 API + 腾讯行情 + 内置因子库(117)</div>
+  <div class="sub">生成于 2026-09-27 17:27<br>数据：i668 实时 API + 腾讯行情 + 内置因子库(117)</div>
 </header>
 
 <div class="tag">恒指 -1.0%</div>
@@ -207,7 +207,7 @@ table.bands tr.g-split td.bname{color:var(--accent-ink)}
 <tr><td class="k">S2 中签后·暗盘收盘</td><td><span class="lo">-3.6%</span> ~ <span class="hi">+6.8%</span></td><td class="base">+4.8%</td><td><span class="stars">★★☆</span></td><td class="v">61.002 ~ 67.583</td></tr>
 <tr><td class="k">S3 暗盘后·首日开盘</td><td><span class="lo">-11.9%</span> ~ <span class="hi">+8.1%</span></td><td class="base">-1.9%</td><td><span class="stars">★★★</span></td><td class="v">55.75 ~ 68.406</td></tr>
 </table>
-<div class="note">区间 = 该条件集的 [P25,P75] 不对称分位（真实 50% 中央区间）。<b>区间越宽 = 这只股在历史样本里越没规律</b>，如实告知，比假装精确有用。</div>
+<div class="note">S1 招股期 = 「长期先验 × 近30天情绪」的方向性宽区间（信息最少，置信最低）；S2/S3 区间 = 该条件集的 [P25,P75] 不对称分位（真实 50% 中央区间）。<b>区间越宽 = 这只股在历史样本里越没规律</b>，如实告知，比假装精确有用。S1 与 S2 在无超购时共用同一基准，两阶段中枢只差一个恒指修正项，不应出现方向矛盾。</div>
 </section>
 
 <section class="plan"><h2>中签之后怎么操作（处置单）</h2>
@@ -259,13 +259,13 @@ table.bands tr.g-split td.bname{color:var(--accent-ink)}
     </section>
 
 <section><h2>S1 招股期 · 计算过程（速览）</h2>
-      <table><tr><th>步骤</th><th>增量</th><th>说明 / 理由</th></tr><tr><td class="k"><span class="tip" data-tip="有些公司同时在 A 股（内地）和港股上市。A 股现价比港股发行价贵得越多，说明港股这边相对「便宜」，上市后往 A 股靠拢的概率越大、通常越暖。做法是拿「A 股比发行价贵多少」乘一个系数（0.238）当预测起点。注意：折价深 ≠ 一定不破发，只是平均而言更暖。">A+H 溢价锚<i class="q">?</i></span></td><td class="v flat">—</td><td class="base">A 股较发行价溢价 -10.4% → 回归隐含中枢 -2.5%（斜率0.238、截断±12pt）；区间半宽 10.0pt <span class="info">→ [-5.0% ~ +7.5%]</span></td></tr><tr><td class="k"><span class="tip" data-tip="保荐人 = 帮公司上市的券商（投行）。看它过去保荐的新股首日表现好不好：战绩强的给一点小加分、差的扣一点。权重故意压得很小，因为这是统计规律、不是保证。">保荐人战绩<i class="q">?</i></span></td><td class="v neg">-0.2%</td><td class="delta">历史首日均值 +14.6% vs 基准 +15.7% → 偏离 -1.1% ×0.15=-0.2% <span class="info">→ [-5.2% ~ +7.4%]</span></td></tr><tr><td class="k"><span class="tip" data-tip="基石投资者 = 提前签约、承诺拿货并锁定一段时间（通常 6 个月）的大机构。它们认购的比例越高，说明专业机构越看好、上市后短期抛压也越小。做法是按「基石占比 减 市场平均 35%」来微调，权重保守。">基石配售<i class="q">?</i></span></td><td class="v pos">+1.6%</td><td class="delta">基石占比 48.4% vs 基准 35% → 偏离 13.4pt ×0.12=+1.6% <span class="info">→ [-3.5% ~ +9.0%]</span></td></tr></table>
+      <table><tr><th>步骤</th><th>增量</th><th>说明 / 理由</th></tr><tr><td class="k"><span class="tip" data-tip="有些公司同时在 A 股（内地）和港股上市。A 股现价比港股发行价贵得越多，说明港股这边相对「便宜」，上市后往 A 股靠拢的概率越大、通常越暖。做法是拿「A 股比发行价贵多少」乘一个系数（0.238）当预测起点。注意：折价深 ≠ 一定不破发，只是平均而言更暖。">A+H 溢价锚<i class="q">?</i></span></td><td class="v flat">—</td><td class="base">A 股较发行价溢价 -10.4% → 回归隐含中枢 -2.5%（斜率0.238、截断±12pt）；区间半宽 10.0pt <span class="info">→ [-5.0% ~ +7.5%]</span></td></tr><tr><td class="k"><span class="tip" data-tip="保荐人 = 帮公司上市的券商（投行）。看它过去保荐的新股首日表现好不好：战绩强的给一点小加分、差的扣一点。权重故意压得很小，因为这是统计规律、不是保证。">保荐人战绩<i class="q">?</i></span></td><td class="v neg">-0.2%</td><td class="delta">历史首日收盘中位 +14.6% vs 基准 +15.7% → 偏离 -1.1% ×0.15=-0.2% <span class="info">→ [-5.2% ~ +7.4%]</span></td></tr><tr><td class="k"><span class="tip" data-tip="基石投资者 = 提前签约、承诺拿货并锁定一段时间（通常 6 个月）的大机构。它们认购的比例越高，说明专业机构越看好、上市后短期抛压也越小。做法是按「基石占比 减 市场平均 35%」来微调，权重保守。">基石配售<i class="q">?</i></span></td><td class="v pos">+1.6%</td><td class="delta">基石占比 48.4% vs 基准 35% → 偏离 13.4pt ×0.12=+1.6% <span class="info">→ [-3.5% ~ +9.0%]</span></td></tr></table>
       <div class="note">看不懂某一行？把鼠标停在<b>步骤名</b>上，会用大白话解释这个因子是干什么的。</div></section>
 <section><h2>S2 中签后 · 计算过程（速览）</h2>
       <table><tr><th>步骤</th><th>增量</th><th>说明 / 理由</th></tr><tr><td class="k"><span class="tip" data-tip="超购 = 认购量 ÷ 发行量。比如发行 1 亿股、大家认购了 20 亿股 = 超购 20 倍。超购越高说明抢的人越多、越难中签，上市后通常也越容易被炒高。我们把超购分成 7 档，直接看历史上「同样热度」的新股暗盘平均涨多少——这是整个模型最重要的一条参考。">超购分档中枢<i class="q">?</i></span></td><td class="v neg">-4.9%</td><td class="base">公开超购 3.78 倍 → 0–15倍（近12月 n=3）；该档暗盘中位 -4.9%、[P25,P75]=[-13.3%, -2.9%]</td></tr><tr><td class="k"><span class="tip" data-tip="在「超购热度」这条主线之外，再叠加保荐人、基石、国配、赛道、规模这些更细的特征：看它们在同一热度档里还能额外带来多少平均涨跌，再补上去。样本太少的档就不修，免得被噪声带偏。">残差分层修正<i class="q">?</i></span></td><td class="v pos">+10.0%</td><td class="delta">超购档之外的边际信息（保荐人/基石/国配/赛道/规模档位残差均值）合计 +10.0% → [sponsor:mid(7.95); corner:mid(-0.59); intl:pos(6.41); sector:pos(11.3); size:mid(2.32)]</td></tr><tr><td class="k"><span class="tip" data-tip="恒生指数当天涨还是跌。大盘好，所有新股的情绪一起水涨船高；大盘差则相反。按恒指涨跌幅乘一个小系数来微调。">大盘环境<i class="q">?</i></span></td><td class="v neg">-0.3%</td><td class="delta">恒指 -1.0% ×0.3 = -0.3%</td></tr></table>
       <div class="note">看不懂某一行？把鼠标停在<b>步骤名</b>上，会用大白话解释这个因子是干什么的。</div></section>
 <section><h2>S3 暗盘后 · 计算过程（速览）</h2>
-      <table><tr><th>步骤</th><th>增量</th><th>说明 / 理由</th></tr><tr><td class="k"><span class="tip" data-tip="暗盘涨跌落在正常区间（−5% ~ +50%）内时，就以暗盘的实际表现为锚，不再额外调整。">常规情形<i class="q">?</i></span></td><td class="v flat">+0.0%</td><td class="delta">暗盘 ±50% 内 → 以暗盘为锚，±10%</td></tr><tr><td class="k"><span class="tip" data-tip="恒生指数前一晚（或当天）涨还是跌。大盘好，所有新股的情绪一起水涨船高；大盘差则相反。按恒指涨跌幅乘一个小系数来微调。">隔夜大盘<i class="q">?</i></span></td><td class="v neg">-0.4%</td><td class="delta">恒指 -1.0% ×0.4 = -0.4%</td></tr><tr><td class="k"><span class="tip" data-tip="国际配售 = 卖给机构的那部分。机构超购倍数高，说明机构也在抢，暗盘通常更暖。">国配修正<i class="q">?</i></span></td><td class="v pos">+2.0%</td><td class="delta">国配 9.46 倍 &gt;5 → +2%</td></tr><tr><td class="k"><span class="tip" data-tip="保荐人 = 帮公司上市的券商（投行）。看它过去保荐的新股首日表现好不好：战绩强的给一点小加分、差的扣一点。权重故意压得很小，因为这是统计规律、不是保证。">保荐人战绩(首日口径)<i class="q">?</i></span></td><td class="v neg">-0.2%</td><td class="delta">历史首日均值 +14.6% vs 基准 +15.7% → -0.2%</td></tr><tr><td class="k"><span class="tip" data-tip="基石投资者 = 提前签约、承诺拿货并锁定一段时间（通常 6 个月）的大机构。它们认购的比例越高，说明专业机构越看好、上市后短期抛压也越小。做法是按「基石占比 减 市场平均 35%」来微调，权重保守。">基石配售(首日口径)<i class="q">?</i></span></td><td class="v pos">+1.6%</td><td class="delta">基石占比 48.4% vs 35% → +1.6%</td></tr></table>
+      <table><tr><th>步骤</th><th>增量</th><th>说明 / 理由</th></tr><tr><td class="k"><span class="tip" data-tip="暗盘涨跌落在正常区间（−5% ~ +50%）内时，就以暗盘的实际表现为锚，不再额外调整。">常规情形<i class="q">?</i></span></td><td class="v flat">+0.0%</td><td class="delta">暗盘 ±50% 内 → 以暗盘为锚，±10%</td></tr><tr><td class="k"><span class="tip" data-tip="恒生指数前一晚（或当天）涨还是跌。大盘好，所有新股的情绪一起水涨船高；大盘差则相反。按恒指涨跌幅乘一个小系数来微调。">隔夜大盘<i class="q">?</i></span></td><td class="v neg">-0.4%</td><td class="delta">恒指 -1.0% ×0.4 = -0.4%</td></tr><tr><td class="k"><span class="tip" data-tip="国际配售 = 卖给机构的那部分。机构超购倍数高，说明机构也在抢，暗盘通常更暖。">国配修正<i class="q">?</i></span></td><td class="v pos">+2.0%</td><td class="delta">国配 9.46 倍 &gt;5 → +2%</td></tr><tr><td class="k"><span class="tip" data-tip="保荐人 = 帮公司上市的券商（投行）。看它过去保荐的新股首日表现好不好：战绩强的给一点小加分、差的扣一点。权重故意压得很小，因为这是统计规律、不是保证。">保荐人战绩(首日口径)<i class="q">?</i></span></td><td class="v neg">-0.2%</td><td class="delta">历史首日收盘中位 +14.6% vs 基准 +15.7% → -0.2%</td></tr><tr><td class="k"><span class="tip" data-tip="基石投资者 = 提前签约、承诺拿货并锁定一段时间（通常 6 个月）的大机构。它们认购的比例越高，说明专业机构越看好、上市后短期抛压也越小。做法是按「基石占比 减 市场平均 35%」来微调，权重保守。">基石配售(首日口径)<i class="q">?</i></span></td><td class="v pos">+1.6%</td><td class="delta">基石占比 48.4% vs 35% → +1.6%</td></tr></table>
       <div class="note">看不懂某一行？把鼠标停在<b>步骤名</b>上，会用大白话解释这个因子是干什么的。</div></section>
 <section><h2>S1 招股期 · 详细计算式</h2>
       <div class="calcwrap"><div class="calc c-base">
@@ -280,7 +280,7 @@ table.bands tr.g-split td.bname{color:var(--accent-ink)}
           <div class="cbody">
             <div class="ck"><span class="tip" data-tip="保荐人 = 帮公司上市的券商（投行）。看它过去保荐的新股首日表现好不好：战绩强的给一点小加分、差的扣一点。权重故意压得很小，因为这是统计规律、不是保证。">保荐人战绩<i class="q">?</i></span><span class="ctag">增量</span><span class="cv neg">-0.16%</span></div>
             <div class="cform"><span class="cform-l">计算式</span><code class="codetip" data-tip="保荐人 = 帮公司上市的券商（投行）。看它过去保荐的新股首日表现好不好：战绩强的给一点小加分、差的扣一点。权重故意压得很小，因为这是统计规律、不是保证。">(14.61% − 15.69%) × 0.15 = -0.16% → clamp(±8) = -0.16%</code></div>
-            <div class="cd">历史首日均值 +14.6% vs 基准 +15.7% → 偏离 -1.1% ×0.15=-0.2%</div>
+            <div class="cd">历史首日收盘中位 +14.6% vs 基准 +15.7% → 偏离 -1.1% ×0.15=-0.2%</div>
             <div class="clohi">→ 累计区间 [-5.2% ~ +7.4%]</div>
           </div></div><div class="calc c-delta">
           <div class="cno">3</div>
@@ -344,7 +344,7 @@ table.bands tr.g-split td.bname{color:var(--accent-ink)}
           <div class="cbody">
             <div class="ck"><span class="tip" data-tip="保荐人 = 帮公司上市的券商（投行）。看它过去保荐的新股首日表现好不好：战绩强的给一点小加分、差的扣一点。权重故意压得很小，因为这是统计规律、不是保证。">保荐人战绩(首日口径)<i class="q">?</i></span><span class="ctag">增量</span><span class="cv neg">-0.21%</span></div>
             <div class="cform"><span class="cform-l">计算式</span><code class="codetip" data-tip="保荐人 = 帮公司上市的券商（投行）。看它过去保荐的新股首日表现好不好：战绩强的给一点小加分、差的扣一点。权重故意压得很小，因为这是统计规律、不是保证。">(14.61% − 15.69%) × 0.2 = -0.21% (clamp±10)</code></div>
-            <div class="cd">历史首日均值 +14.6% vs 基准 +15.7% → -0.2%</div>
+            <div class="cd">历史首日收盘中位 +14.6% vs 基准 +15.7% → -0.2%</div>
             
           </div></div><div class="calc c-delta">
           <div class="cno">5</div>
@@ -382,7 +382,7 @@ table.bands tr.g-split td.bname{color:var(--accent-ink)}
 <div>⚠ 免责：本预测是基于历史统计的条件分布推断，<b>不是荐股、不保收益、不是精确报价器</b>。模型只承诺「方向+区间」，点位级预测是伪命题。<b>处置单给出的是执行纪律（按暗盘实际落点触发），不是收益承诺。</b></div>
 <div>实时性：每次运行均实时重抓配售结果 + 恒指/A股行情，并在<b>分层窗口（近3月→6月→12月，近端优先）</b>上重算分桶与保荐人战绩，故不同时段问会得到刷新后的评估。本页所有数字均为运行时实时计算，无写死常量。</div>
 <div>诚实边界：本站无暗盘分时/最高/最低/成交量数据，<b>无法预测「高开低走还是低开高走」</b>；实况回测显示模型的方向命中率不高（不擅长猜单只涨跌方向），故动作全部按实际落点触发。</div>
-<div>改造痕迹：静态桶→分层实时重算 ｜ 固定冷热平移→删除（因果回测证伪） ｜ S2 残差分层修正 ｜ S3 妖股系数标定 ｜ 保荐人改中位数口径 ｜ 剔除 openPct 缺失污染 ｜ 新增持仓处置单。</div>
+<div>改造痕迹：静态桶→分层实时重算 ｜ 固定冷热平移→删除（因果回测证伪） ｜ S1/S2 无超购基准统一为「长期先验×近30天情绪各半」（85 只因果回测选出；赛道分层桶方案同期被回测证伪弃用） ｜ 18C 固定加分删除（实证证伪） ｜ S2 残差分层修正 ｜ S3 妖股系数标定 ｜ 保荐人改中位数口径 ｜ 剔除 openPct 缺失污染 ｜ 新增持仓处置单。</div>
 </footer>
 </div>
 <script>
