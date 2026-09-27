@@ -1,0 +1,228 @@
+<!doctype html><html lang="zh"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>港股打新预测 · 罗博特科</title><style>
+:root{
+  --bg:#fbfbfd; --card:#ffffff; --soft:#f5f5f7; --soft2:#fafafc;
+  --ink:#1d1d1f; --ink2:#3a3a3c; --mut:#6e6e73; --mut2:#8e8e93;
+  --line:#e8e8ed; --line2:#d2d2d7;
+  --accent:#0071e3; --accent-ink:#0066cc; --accent-soft:#eef6fe;
+  --pos:#d70015; --neg:#0b8043; --flat:#8e8e93;
+  --amber:#b7791f; --amber-bg:#fff7e8; --amber-line:#f0d9ad;
+  --shadow-sm:0 1px 2px rgba(0,0,0,.05);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-size:15px;
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Helvetica Neue","Microsoft YaHei",sans-serif;
+  line-height:1.62;-webkit-font-smoothing:antialiased;}
+.wrap{max-width:1040px;margin:0 auto;padding:44px 24px 80px;}
+header{display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:14px;
+  padding-bottom:22px;border-bottom:1px solid var(--line);}
+h1{font-size:30px;margin:0;font-weight:700;letter-spacing:-.02em;}
+h1 .code{color:var(--mut);font-size:16px;font-weight:500;margin-left:10px;font-variant-numeric:tabular-nums;}
+.sub{color:var(--mut);font-size:13px;margin-top:7px;}
+.tag{display:inline-block;background:var(--soft);color:var(--ink2);border:1px solid var(--line);
+  border-radius:999px;padding:4px 13px;font-size:12.5px;margin:10px 6px 0 0;}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:24px 0;}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:20px;
+  position:relative;box-shadow:var(--shadow-sm);}
+.card.cur{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft),0 12px 30px rgba(0,113,227,.13);}
+.card h3{margin:0 0 8px;font-size:13px;color:var(--mut);font-weight:600;}
+.range{font-size:27px;font-weight:700;margin:6px 0;letter-spacing:-.02em;font-variant-numeric:tabular-nums;}
+.center{color:var(--ink2);font-size:13px;margin:4px 0;}
+.price{color:var(--mut);font-size:12px;margin-top:8px;font-variant-numeric:tabular-nums;}
+.stars{color:#f5a623;letter-spacing:2px;font-size:13px;}
+.lo{color:var(--neg)} .hi{color:var(--pos)}
+.badge{position:absolute;top:15px;right:15px;font-size:11px;padding:3px 10px;border-radius:999px;font-weight:600;}
+.b-prov{background:var(--amber-bg);color:var(--amber);}
+.b-cur{background:var(--accent);color:#fff;}
+.b-done{background:#e7f7ee;color:var(--neg);}
+.b-wait{background:var(--soft);color:var(--mut2);}
+section{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:24px;margin:18px 0;box-shadow:var(--shadow-sm);}
+section h2{margin:0 0 18px;font-size:18px;font-weight:600;letter-spacing:-.01em;display:flex;align-items:center;gap:10px;}
+section h2::before{content:"";width:3px;height:16px;border-radius:2px;background:var(--accent);}
+table{width:100%;border-collapse:collapse;font-size:13.5px;}
+th,td{text-align:left;padding:11px 12px;border-bottom:1px solid var(--line);vertical-align:top;}
+th{color:var(--mut);font-weight:600;font-size:12.5px;background:transparent;}
+tr:last-child td{border-bottom:none;}
+td.k{font-weight:600;white-space:nowrap;}
+td.v{font-variant-numeric:tabular-nums;white-space:nowrap;}
+td.v.pos{color:var(--pos)} td.v.neg{color:var(--neg)} td.v.flat{color:var(--flat)}
+.base{font-weight:600} .delta{color:var(--ink2)} .info{color:var(--mut)}
+.kpis{display:flex;flex-wrap:wrap;gap:12px;margin:10px 0;}
+.kpi{flex:1;min-width:150px;background:var(--soft);border:1px solid var(--line);border-radius:14px;padding:14px 16px;}
+.kpi .n{font-size:22px;font-weight:700;letter-spacing:-.01em;font-variant-numeric:tabular-nums;}
+.kpi .l{font-size:12px;color:var(--mut);margin-top:2px;}
+.note{font-size:12.5px;color:var(--ink2);background:var(--soft);border-left:3px solid var(--line2);
+  padding:10px 14px;border-radius:0 10px 10px 0;margin:12px 0;}
+.warn{border-left-color:var(--amber-line);background:var(--amber-bg);color:var(--amber);}
+.facgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.fac{background:var(--soft2);border:1px solid var(--line);border-radius:14px;padding:14px 16px;}
+.fac .ft{font-weight:600;font-size:14px;} .fac .fs{font-size:12.5px;color:var(--mut);margin-top:5px;}
+.chip{font-size:11px;padding:2px 8px;border-radius:999px;margin-left:7px;font-weight:600;}
+.c-use{background:#e7f7ee;color:var(--neg)} .c-show{background:var(--amber-bg);color:var(--amber)} .c-miss{background:#fdecec;color:#c0392b}
+footer{color:var(--mut);font-size:12px;margin-top:28px;border-top:1px solid var(--line);padding-top:16px;line-height:1.75;}
+footer b{color:var(--ink2)}
+.open{background:linear-gradient(180deg,#fffdf8,#fff9ef);border-color:var(--amber-line);}
+.open h2::before{background:var(--amber);}
+.calcwrap{display:flex;flex-direction:column;gap:12px;margin:8px 0;}
+.calc{display:flex;gap:14px;background:var(--soft2);border:1px solid var(--line);border-left-width:3px;border-radius:14px;padding:14px 16px;}
+.calc.c-base{border-left-color:var(--accent)}
+.calc.c-delta{border-left-color:#5e5ce6}
+.calc.c-info{border-left-color:var(--line2)}
+.cno{flex:0 0 26px;height:26px;border-radius:50%;background:var(--accent-soft);color:var(--accent-ink);
+  font-weight:700;display:flex;align-items:center;justify-content:center;font-size:12.5px}
+.cbody{flex:1;min-width:0}
+.ck{font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.ctag{font-size:11px;padding:2px 8px;border-radius:999px;background:var(--soft);color:var(--mut);
+  font-weight:500;border:1px solid var(--line)}
+.cv{font-weight:700;font-variant-numeric:tabular-nums}
+.cv.pos{color:var(--pos)} .cv.neg{color:var(--neg)}
+.cform{margin:9px 0 5px;display:flex;gap:8px;align-items:flex-start}
+.cform-l{flex:0 0 auto;font-size:11px;color:var(--accent-ink);background:var(--accent-soft);
+  border-radius:6px;padding:3px 9px;margin-top:2px;font-weight:600}
+.cform code{flex:1;display:block;background:var(--soft);border:1px solid var(--line);border-radius:10px;padding:9px 11px;
+  font-family:"SFMono-Regular",ui-monospace,Consolas,"Liberation Mono",monospace;font-size:12.5px;color:var(--ink2);
+  white-space:pre-wrap;word-break:break-word;line-height:1.55;}
+.cd{font-size:12.5px;color:var(--mut);margin-top:5px}
+.clohi{font-size:12px;color:var(--ink2);margin-top:5px;font-variant-numeric:tabular-nums}
+.fac .ff{margin-top:8px;font-family:"SFMono-Regular",ui-monospace,Consolas,"Liberation Mono",monospace;font-size:11.5px;
+  color:var(--ink2);background:var(--soft);border:1px solid var(--line);border-radius:9px;padding:7px 9px;
+  white-space:pre-wrap;word-break:break-word;}
+/* —— 悬停通俗解释（Apple 风深色气泡） —— */
+.tip,.codetip{position:relative;cursor:help;}
+.tip{border-bottom:1px dashed var(--line2);}
+.tip .q{display:inline-flex;align-items:center;justify-content:center;width:13px;height:13px;border-radius:50%;
+  background:var(--accent-soft);color:var(--accent-ink);font-size:9px;font-weight:700;font-style:normal;
+  margin-left:5px;vertical-align:1px;}
+.tip::after,.codetip::after{content:attr(data-tip);position:absolute;left:0;top:calc(100% + 9px);z-index:60;
+  width:330px;max-width:76vw;background:#1d1d1f;color:#f5f5f7;font-weight:400;font-size:12.5px;line-height:1.66;
+  letter-spacing:0;text-align:left;padding:12px 14px;border-radius:12px;box-shadow:0 16px 44px rgba(0,0,0,.28);
+  opacity:0;visibility:hidden;transform:translateY(-4px);transition:opacity .16s ease,transform .16s ease;
+  pointer-events:none;white-space:normal;word-break:break-word;}
+.tip:hover::after,.codetip:hover::after{opacity:1;visibility:visible;transform:translateY(0)}
+.tip:hover,.codetip:hover{color:var(--ink)}
+@media (max-width:720px){.grid{grid-template-columns:1fr}.facgrid{grid-template-columns:1fr}}
+@media print{.tip::after,.codetip::after{display:none}.tip,.codetip{border-bottom:none}}
+</style></head>
+<body><div class="wrap">
+<header>
+  <div><h1>罗博特科<span class="code">03757</span></h1>
+  <div class="sub">发行价 436.000 ｜ 招股截止 2026-09-24 ｜ 暗盘 2026-09-28 ｜ 上市 2026-09-29</div></div>
+  <div class="sub">生成于 2026-09-27 11:01<br>数据：i668 实时 API + 腾讯行情 + 内置因子库(117)</div>
+</header>
+
+<div class="tag">恒指 -1.0%</div>
+<div class="tag">情绪周期 热市</div>
+<div class="tag">校准样本 n=106</div>
+<div class="tag">妖股系数 1.01</div>
+
+<div class="grid">
+  <div class="card">
+      <h3>招股期预测</h3>
+      <div class="range"><span class="lo">-5.5%</span> ~ <span class="hi">+14.5%</span></div>
+      <div class="center">中枢 <b class="base">+4.5%</b> ｜ <span class="stars">★☆☆</span></div>
+      <div class="price">价格 412.02 ~ 499.22 HKD</div>
+    </div>
+  <div class="card cur"><span class="badge b-cur">当前</span>
+      <h3>中签后预测（暗盘收盘）</h3>
+      <div class="range"><span class="lo">+2.6%</span> ~ <span class="hi">+24.6%</span></div>
+      <div class="center">中枢 <b class="base">+12.6%</b> ｜ <span class="stars">★★☆</span></div>
+      <div class="price">价格 447.336 ~ 543.256 HKD</div>
+    </div>
+  <div class="card"><h3>S3</h3><div class="center info">数据不足</div></div>
+</div>
+
+<section><h2>三阶段预测结论</h2>
+<table><tr><th>阶段</th><th>预测区间(相对发行价)</th><th>中枢</th><th>置信</th><th>价格区间(HKD)</th></tr>
+<tr><td class="k">S1 招股期</td><td><span class="lo">-5.5%</span> ~ <span class="hi">+14.5%</span></td><td class="base">+4.5%</td><td><span class="stars">★☆☆</span></td><td class="v">412.02 ~ 499.22</td></tr>
+<tr><td class="k">S2 中签后·暗盘收盘</td><td><span class="lo">+2.6%</span> ~ <span class="hi">+24.6%</span></td><td class="base">+12.6%</td><td><span class="stars">★★☆</span></td><td class="v">447.336 ~ 543.256</td></tr>
+<tr><td class="k">S3 暗盘后·首日开盘</td><td colspan="4" class="info">数据不足 / 未到阶段</td></tr>
+</table>
+<div class="note">区间 = 该条件集的 [P25,P75] 不对称分位（真实 50% 中央区间）。<b>区间越宽 = 这只股在历史样本里越没规律</b>，如实告知，比假装精确有用。</div>
+</section>
+
+<section><h2>S1 招股期 · 计算过程（速览）</h2>
+      <table><tr><th>步骤</th><th>增量</th><th>说明 / 理由</th></tr><tr><td class="k"><span class="tip" data-tip="有些公司同时在 A 股（内地）和港股上市。A 股现价比港股发行价贵得越多，说明港股这边相对「便宜」，上市后往 A 股靠拢的概率越大、通常越暖。做法是拿「A 股比发行价贵多少」乘一个系数（0.238）当预测起点。注意：折价深 ≠ 一定不破发，只是平均而言更暖。">A+H 溢价锚<i class="q">?</i></span></td><td class="v flat">—</td><td class="base">A 股较发行价溢价 +41.5% → 回归隐含中枢 +9.9%（斜率0.238、截断±12pt）；区间半宽 10.0pt <span class="info">→ [-0.1% ~ +19.9%]</span></td></tr><tr><td class="k"><span class="tip" data-tip="保荐人 = 帮公司上市的券商（投行）。看它过去保荐的新股首日表现好不好：战绩强的给一点小加分、差的扣一点。权重故意压得很小，因为这是统计规律、不是保证。">保荐人战绩<i class="q">?</i></span></td><td class="v neg">-5.3%</td><td class="delta">历史首日均值 +15.2% vs 基准 +50.7% → 偏离 -35.6% ×0.15=-5.3% <span class="info">→ [-5.5% ~ +14.5%]</span></td></tr></table>
+      <div class="note">看不懂某一行？把鼠标停在<b>步骤名</b>上，会用大白话解释这个因子是干什么的。</div></section>
+<section><h2>S2 中签后 · 计算过程（速览）</h2>
+      <table><tr><th>步骤</th><th>增量</th><th>说明 / 理由</th></tr><tr><td class="k"><span class="tip" data-tip="有些公司同时在 A 股（内地）和港股上市。A 股现价比港股发行价贵得越多，说明港股这边相对「便宜」，上市后往 A 股靠拢的概率越大、通常越暖。做法是拿「A 股比发行价贵多少」乘一个系数（0.238）当预测起点。注意：折价深 ≠ 一定不破发，只是平均而言更暖。">A+H 折价档中枢(降级)<i class="q">?</i></span></td><td class="v pos">+9.9%</td><td class="base">⚠ 站点未录入超购 → 改用 A+H 隐含中枢 +9.9%（半宽 10/12pt）</td></tr><tr><td class="k"><span class="tip" data-tip="先看最近 12 个月整体市场是冷是热：破发率很高、新股普遍跌就是「冷市」，就把所有预测整体下调；反之「热市」上调。相当于给预测装了一个温度计。">情绪周期平移<i class="q">?</i></span></td><td class="v pos">+3.0%</td><td class="delta">近12月 热市（破发率 20.8%、均涨 +29.7%）→ 中枢平移 +3.0%</td></tr><tr><td class="k"><span class="tip" data-tip="在「超购热度」这条主线之外，再叠加保荐人、基石、国配、赛道、规模这些更细的特征：看它们在同一热度档里还能额外带来多少平均涨跌，再补上去。样本太少的档就不修，免得被噪声带偏。">残差分层修正<i class="q">?</i></span></td><td class="v flat">—</td><td class="info">超购档之外的因子档位样本不足或方向互抵 → 不强行修正（避免噪声）</td></tr><tr><td class="k"><span class="tip" data-tip="恒生指数当天涨还是跌。大盘好，所有新股的情绪一起水涨船高；大盘差则相反。按恒指涨跌幅乘一个小系数来微调。">大盘环境<i class="q">?</i></span></td><td class="v neg">-0.3%</td><td class="delta">恒指 -1.0% ×0.3 = -0.3%</td></tr></table>
+      <div class="note">看不懂某一行？把鼠标停在<b>步骤名</b>上，会用大白话解释这个因子是干什么的。</div></section>
+
+<section><h2>S1 招股期 · 详细计算式</h2>
+      <div class="calcwrap"><div class="calc c-base">
+          <div class="cno">1</div>
+          <div class="cbody">
+            <div class="ck"><span class="tip" data-tip="有些公司同时在 A 股（内地）和港股上市。A 股现价比港股发行价贵得越多，说明港股这边相对「便宜」，上市后往 A 股靠拢的概率越大、通常越暖。做法是拿「A 股比发行价贵多少」乘一个系数（0.238）当预测起点。注意：折价深 ≠ 一定不破发，只是平均而言更暖。">A+H 溢价锚<i class="q">?</i></span><span class="ctag">基准</span></div>
+            <div class="cform"><span class="cform-l">计算式</span><code class="codetip" data-tip="有些公司同时在 A 股（内地）和港股上市。A 股现价比港股发行价贵得越多，说明港股这边相对「便宜」，上市后往 A 股靠拢的概率越大、通常越暖。做法是拿「A 股比发行价贵多少」乘一个系数（0.238）当预测起点。注意：折价深 ≠ 一定不破发，只是平均而言更暖。">中枢 = clamp(0.238 × 41.5%, ±12) = 9.9%</code></div>
+            <div class="cd">A 股较发行价溢价 +41.5% → 回归隐含中枢 +9.9%（斜率0.238、截断±12pt）；区间半宽 10.0pt</div>
+            <div class="clohi">→ 累计区间 [-0.1% ~ +19.9%]</div>
+          </div></div><div class="calc c-delta">
+          <div class="cno">2</div>
+          <div class="cbody">
+            <div class="ck"><span class="tip" data-tip="保荐人 = 帮公司上市的券商（投行）。看它过去保荐的新股首日表现好不好：战绩强的给一点小加分、差的扣一点。权重故意压得很小，因为这是统计规律、不是保证。">保荐人战绩<i class="q">?</i></span><span class="ctag">增量</span><span class="cv neg">-5.33%</span></div>
+            <div class="cform"><span class="cform-l">计算式</span><code class="codetip" data-tip="保荐人 = 帮公司上市的券商（投行）。看它过去保荐的新股首日表现好不好：战绩强的给一点小加分、差的扣一点。权重故意压得很小，因为这是统计规律、不是保证。">(15.19% − 50.74%) × 0.15 = -5.33% → clamp(±8) = -5.33%</code></div>
+            <div class="cd">历史首日均值 +15.2% vs 基准 +50.7% → 偏离 -35.6% ×0.15=-5.3%</div>
+            <div class="clohi">→ 累计区间 [-5.5% ~ +14.5%]</div>
+          </div></div></div>
+      <div class="note">每一行 = 一个因子/修正项的「输入 → 公式 → 代入 → 输出」。带「累计区间」的最后一行端点必须等于下方三阶段结论的区间。悬停<b>因子名或计算式</b>可看大白话解释。</div>
+    </section>
+<section><h2>S2 中签后 · 详细计算式（暗盘收盘）</h2>
+      <div class="calcwrap"><div class="calc c-base">
+          <div class="cno">1</div>
+          <div class="cbody">
+            <div class="ck"><span class="tip" data-tip="有些公司同时在 A 股（内地）和港股上市。A 股现价比港股发行价贵得越多，说明港股这边相对「便宜」，上市后往 A 股靠拢的概率越大、通常越暖。做法是拿「A 股比发行价贵多少」乘一个系数（0.238）当预测起点。注意：折价深 ≠ 一定不破发，只是平均而言更暖。">A+H 折价档中枢(降级)<i class="q">?</i></span><span class="ctag">基准</span><span class="cv pos">+9.9%</span></div>
+            <div class="cform"><span class="cform-l">计算式</span><code class="codetip" data-tip="有些公司同时在 A 股（内地）和港股上市。A 股现价比港股发行价贵得越多，说明港股这边相对「便宜」，上市后往 A 股靠拢的概率越大、通常越暖。做法是拿「A 股比发行价贵多少」乘一个系数（0.238）当预测起点。注意：折价深 ≠ 一定不破发，只是平均而言更暖。">无超购 → center = clamp(0.238 × 41.5%, ±12) = 9.9%</code></div>
+            <div class="cd">⚠ 站点未录入超购 → 改用 A+H 隐含中枢 +9.9%（半宽 10/12pt）</div>
+            
+          </div></div><div class="calc c-delta">
+          <div class="cno">2</div>
+          <div class="cbody">
+            <div class="ck"><span class="tip" data-tip="先看最近 12 个月整体市场是冷是热：破发率很高、新股普遍跌就是「冷市」，就把所有预测整体下调；反之「热市」上调。相当于给预测装了一个温度计。">情绪周期平移<i class="q">?</i></span><span class="ctag">增量</span><span class="cv pos">+3.0%</span></div>
+            <div class="cform"><span class="cform-l">计算式</span><code class="codetip" data-tip="先看最近 12 个月整体市场是冷是热：破发率很高、新股普遍跌就是「冷市」，就把所有预测整体下调；反之「热市」上调。相当于给预测装了一个温度计。">破发率=20.8%, 均涨=29.7% → 判定 热市 → shift=+3.0pt</code></div>
+            <div class="cd">近12月 热市（破发率 20.8%、均涨 +29.7%）→ 中枢平移 +3.0%</div>
+            
+          </div></div><div class="calc c-info">
+          <div class="cno">3</div>
+          <div class="cbody">
+            <div class="ck"><span class="tip" data-tip="在「超购热度」这条主线之外，再叠加保荐人、基石、国配、赛道、规模这些更细的特征：看它们在同一热度档里还能额外带来多少平均涨跌，再补上去。样本太少的档就不修，免得被噪声带偏。">残差分层修正<i class="q">?</i></span><span class="ctag">说明</span></div>
+            <div class="cform"><span class="cform-l">计算式</span><code class="codetip" data-tip="在「超购热度」这条主线之外，再叠加保荐人、基石、国配、赛道、规模这些更细的特征：看它们在同一热度档里还能额外带来多少平均涨跌，再补上去。样本太少的档就不修，免得被噪声带偏。">Σ(各因子档位残差均值): 样本&lt;5 或方向互抵 → 不修正（避免噪声）</code></div>
+            <div class="cd">超购档之外的因子档位样本不足或方向互抵 → 不强行修正（避免噪声）</div>
+            
+          </div></div><div class="calc c-delta">
+          <div class="cno">4</div>
+          <div class="cbody">
+            <div class="ck"><span class="tip" data-tip="恒生指数当天涨还是跌。大盘好，所有新股的情绪一起水涨船高；大盘差则相反。按恒指涨跌幅乘一个小系数来微调。">大盘环境<i class="q">?</i></span><span class="ctag">增量</span><span class="cv neg">-0.3%</span></div>
+            <div class="cform"><span class="cform-l">计算式</span><code class="codetip" data-tip="恒生指数当天涨还是跌。大盘好，所有新股的情绪一起水涨船高；大盘差则相反。按恒指涨跌幅乘一个小系数来微调。">-1.0% × 0.3 = -0.30%</code></div>
+            <div class="cd">恒指 -1.0% ×0.3 = -0.3%</div>
+            
+          </div></div></div>
+      <div class="note">每一行 = 一个因子/修正项的「输入 → 公式 → 代入 → 输出」。带「累计区间」的最后一行端点必须等于下方三阶段结论的区间。悬停<b>因子名或计算式</b>可看大白话解释。</div>
+    </section>
+
+
+<section><h2>动态校准状态（情绪周期 / FINI）</h2>
+<div class="kpis">
+  <div class="kpi"><div class="n">热市</div><div class="l">当前市况</div></div>
+  <div class="kpi"><div class="n">+29.7%</div><div class="l">窗口内中位暗盘涨幅</div></div>
+  <div class="kpi"><div class="n">20.8%</div><div class="l">破发率</div></div>
+  <div class="kpi"><div class="n">1096.995</div><div class="l">超购中位数(倍)</div></div>
+  <div class="kpi"><div class="n">106</div><div class="l">有效样本(近12月)</div></div>
+</div>
+<div class="note">近6月新股数：2026-04:8、2026-05:13、2026-06:24、2026-07:14、2026-08:1、2026-09:7</div>
+<div class="note warn">⚠ FINI 口径：2023年底港交所 FINI 上线后申购资金仅冻结中签额，超购倍数系统性虚高。本引擎所有阈值均基于 FINI 后样本实时重算，不跨期混用；冷热市平移即其对情绪的二次修正。</div>
+</section>
+
+<section class="open"><h2>暗盘开盘价 · 情绪初判（辅输出）</h2>
+<div class="kpis"><div class="kpi"><div class="n">+8.6% ~ +18.6%</div><div class="l">开盘价初判区间(相对发行价)</div></div></div><div class="note">情绪初判（非模型输出）：暗盘开盘易被前几分钟大单砸偏，仅作方向参考；妖股开盘波动更大。</div>
+</section>
+
+<section><h2>因子方法总表（参与 / 展示 / 缺失）</h2>
+<div class="facgrid"><div class="fac"><div class="ft"><span class="tip" data-tip="超购 = 认购量 ÷ 发行量。比如发行 1 亿股、大家认购了 20 亿股 = 超购 20 倍。超购越高说明抢的人越多、越难中签，上市后通常也越容易被炒高。我们把超购分成 7 档，直接看历史上「同样热度」的新股暗盘平均涨多少——这是整个模型最重要的一条参考。">超购分档<i class="q">?</i></span><span class="chip c-use">已纳入</span></div><div class="fs">公开超购倍数分 7 档，取该档近12月暗盘中位数为中枢、[P25,P75] 为不对称区间。S2 主导项。<br>来源：i668 API · 实时重算</div><div class="ff codetip" data-tip="超购 = 认购量 ÷ 发行量。比如发行 1 亿股、大家认购了 20 亿股 = 超购 20 倍。超购越高说明抢的人越多、越难中签，上市后通常也越容易被炒高。我们把超购分成 7 档，直接看历史上「同样热度」的新股暗盘平均涨多少——这是整个模型最重要的一条参考。">档位=bucket(公开超购)；中枢=median(该档暗盘涨幅)；区间=[med−dLo, med+dHi]，dLo/dHi=该档[P25,P75]半距（实时重算）</div></div><div class="fac"><div class="ft"><span class="tip" data-tip="有些公司同时在 A 股（内地）和港股上市。A 股现价比港股发行价贵得越多，说明港股这边相对「便宜」，上市后往 A 股靠拢的概率越大、通常越暖。做法是拿「A 股比发行价贵多少」乘一个系数（0.238）当预测起点。注意：折价深 ≠ 一定不破发，只是平均而言更暖。">A+H 折价锚<i class="q">?</i></span><span class="chip c-use">已纳入</span></div><div class="fs">A股较发行价溢价% × 回归斜率 0.238（截断±12pt）。S1/S2 统一口径（原两处不一致已合并）。<br>来源：腾讯行情 + 招股书</div><div class="ff codetip" data-tip="有些公司同时在 A 股（内地）和港股上市。A 股现价比港股发行价贵得越多，说明港股这边相对「便宜」，上市后往 A 股靠拢的概率越大、通常越暖。做法是拿「A 股比发行价贵多少」乘一个系数（0.238）当预测起点。注意：折价深 ≠ 一定不破发，只是平均而言更暖。">隐含中枢 = clamp(0.238 × A股溢价%, ±12pt)</div></div><div class="fac"><div class="ft"><span class="tip" data-tip="在「超购热度」这条主线之外，再叠加保荐人、基石、国配、赛道、规模这些更细的特征：看它们在同一热度档里还能额外带来多少平均涨跌，再补上去。样本太少的档就不修，免得被噪声带偏。">残差分层修正<i class="q">?</i></span><span class="chip c-use">已纳入</span></div><div class="fs">超购档之外的边际信息：保荐人/基石/国配/赛道/规模 的档位残差均值。替代原「6因子全砍」。<br>来源：样本残差回归 · 实时</div><div class="ff codetip" data-tip="在「超购热度」这条主线之外，再叠加保荐人、基石、国配、赛道、规模这些更细的特征：看它们在同一热度档里还能额外带来多少平均涨跌，再补上去。样本太少的档就不修，免得被噪声带偏。">corr = Σ 各因子档位(样本≥5)的(dk−桶中位)残差均值，clamp(±10pt)</div></div><div class="fac"><div class="ft"><span class="tip" data-tip="先看最近 12 个月整体市场是冷是热：破发率很高、新股普遍跌就是「冷市」，就把所有预测整体下调；反之「热市」上调。相当于给预测装了一个温度计。">情绪周期平移<i class="q">?</i></span><span class="chip c-use">已纳入</span></div><div class="fs">近12月破发率/均涨判定冷热市，整体平移中位数（冷市−8 / 热市+3）。动态校准核心。<br>来源：滚动窗口 · 实时</div><div class="ff codetip" data-tip="先看最近 12 个月整体市场是冷是热：破发率很高、新股普遍跌就是「冷市」，就把所有预测整体下调；反之「热市」上调。相当于给预测装了一个温度计。">破发率&gt;50% 或 中位暗盘&lt;0 → 冷市−8pt；破发率&lt;30% 且 中位暗盘&gt;10% → 热市+3pt；否则 0</div></div><div class="fac"><div class="ft"><span class="tip" data-tip="恒生指数当天涨还是跌。大盘好，所有新股的情绪一起水涨船高；大盘差则相反。按恒指涨跌幅乘一个小系数来微调。">大盘环境<i class="q">?</i></span><span class="chip c-use">已纳入</span></div><div class="fs">恒指涨跌幅 ×0.3（S2）/ ×0.4（S3）。唯一实时修正项。<br>来源：腾讯恒指 · 实时</div><div class="ff codetip" data-tip="恒生指数当天涨还是跌。大盘好，所有新股的情绪一起水涨船高；大盘差则相反。按恒指涨跌幅乘一个小系数来微调。">S2: 中枢 += 恒指%×0.3；S3: 中枢 += 恒指%×0.4</div></div><div class="fac"><div class="ft"><span class="tip" data-tip="超购 = 认购量 ÷ 发行量。比如发行 1 亿股、大家认购了 20 亿股 = 超购 20 倍。超购越高说明抢的人越多、越难中签，上市后通常也越容易被炒高。我们把超购分成 7 档，直接看历史上「同样热度」的新股暗盘平均涨多少——这是整个模型最重要的一条参考。">国配超购<i class="q">?</i></span><span class="chip c-use">已纳入</span></div><div class="fs">国际配售 &gt;5倍 +2%（S3参与；S2以残差分层间接计入）。<br>来源：i668 API</div><div class="ff codetip" data-tip="超购 = 认购量 ÷ 发行量。比如发行 1 亿股、大家认购了 20 亿股 = 超购 20 倍。超购越高说明抢的人越多、越难中签，上市后通常也越容易被炒高。我们把超购分成 7 档，直接看历史上「同样热度」的新股暗盘平均涨多少——这是整个模型最重要的一条参考。">国配&gt;5倍 → +2pt（S3直接；S2经残差分层间接）</div></div><div class="fac"><div class="ft"><span class="tip" data-tip="发行的盘子大小。小盘股筹码少、容易被炒、波动大；大盘股相对稳。所以小额度稍加分、大额度稍减分。">发行规模<i class="q">?</i></span><span class="chip c-use">已纳入</span></div><div class="fs">募资额分档（&lt;30亿 / 30–300亿 / &gt;300亿），按档位残差均值修正（残差分层间接计入）。<br>来源：招股书</div><div class="ff codetip" data-tip="发行的盘子大小。小盘股筹码少、容易被炒、波动大；大盘股相对稳。所以小额度稍加分、大额度稍减分。">档位：&lt;30亿(小) / 30–300亿(中) / &gt;300亿(大)；Δ = 该档样本(dk−桶中位)残差均值，并入 corr 合计 clamp ±10pt</div></div><div class="fac"><div class="ft"><span class="tip" data-tip="保荐人 = 帮公司上市的券商（投行）。看它过去保荐的新股首日表现好不好：战绩强的给一点小加分、差的扣一点。权重故意压得很小，因为这是统计规律、不是保证。">保荐人战绩<i class="q">?</i></span><span class="chip c-use">已纳入</span></div><div class="fs">(历史首日均值−市场基准)×权重，S1 15%±8、S3 20%±10；S2 经残差分层间接计入。etnet 公开页。<br>来源：etnet · 内置库</div><div class="ff codetip" data-tip="保荐人 = 帮公司上市的券商（投行）。看它过去保荐的新股首日表现好不好：战绩强的给一点小加分、差的扣一点。权重故意压得很小，因为这是统计规律、不是保证。">Δ = (历史首日均值 − 市场基准) × 权重；S1/S2权重0.15±0.08，S3权重0.20±0.10；clamp</div></div><div class="fac"><div class="ft"><span class="tip" data-tip="基石投资者 = 提前签约、承诺拿货并锁定一段时间（通常 6 个月）的大机构。它们认购的比例越高，说明专业机构越看好、上市后短期抛压也越小。做法是按「基石占比 减 市场平均 35%」来微调，权重保守。">基石配售<i class="q">?</i></span><span class="chip c-use">已纳入</span></div><div class="fs">基石认购÷全球发售 = 占比，vs 基准35% ×0.12（±6pt）。招股章程PDF。<br>来源：港交所披露易 · 内置库</div><div class="ff codetip" data-tip="基石投资者 = 提前签约、承诺拿货并锁定一段时间（通常 6 个月）的大机构。它们认购的比例越高，说明专业机构越看好、上市后短期抛压也越小。做法是按「基石占比 减 市场平均 35%」来微调，权重保守。">Δ = (基石占比 − 35%) × 0.12，clamp(±6pt)</div></div><div class="fac"><div class="ft"><span class="tip" data-tip="有些新股暗盘会暴涨（俗称「妖股」）。对这类股，用历史数据找出「首日开盘 ÷ 暗盘收盘」的比例关系，来推算首日开盘大概是多少。">妖股标定系数<i class="q">?</i></span><span class="chip c-use">已纳入</span></div><div class="fs">S3：暗盘&gt;50% 时 首日开盘/暗盘收盘 的样本中位比（原0.7裸常数已标定）。<br>来源：样本实测 · 实时</div><div class="ff codetip" data-tip="有些新股暗盘会暴涨（俗称「妖股」）。对这类股，用历史数据找出「首日开盘 ÷ 暗盘收盘」的比例关系，来推算首日开盘大概是多少。">S3: 暗盘&gt;50% → 首日开盘 ≈ 暗盘 × ratio(样本中位比≈1.01，原0.7已证伪)</div></div><div class="fac"><div class="ft"><span class="tip" data-tip="绿鞋 = 「超额配股权」。承销商可以多卖约 15% 的股票；上市后 30 天内如果跌破发行价，稳价人可以买入托价。所以「有绿鞋 = 破发时下方有人接」。港股几乎人人都有，区分度低，只展示、不进打分。">超额配股权(绿鞋)<i class="q">?</i></span><span class="chip c-show">只展示</span></div><div class="fs">承销商可超额配售约15%，上市后30天破发可由稳价人托价。区分度低→只展示不入权重。<br>来源：招股章程PDF</div><div class="ff codetip" data-tip="绿鞋 = 「超额配股权」。承销商可以多卖约 15% 的股票；上市后 30 天内如果跌破发行价，稳价人可以买入托价。所以「有绿鞋 = 破发时下方有人接」。港股几乎人人都有，区分度低，只展示、不进打分。">机制项：超额配售权≈15%，破发时稳价人可托价（不量化入权重）</div></div><div class="fac"><div class="ft"><span class="tip" data-tip="公开发售和国际配售各占多少、有没有回拨机制。它会明显影响中签率和货源集中度，但很难折算成一个分数，所以只展示、不加权。">发售结构<i class="q">?</i></span><span class="chip c-show">只展示</span></div><div class="fs">公开占比/回拨/基石名单。机制影响中签率与筹码，难量化单分→只展示。<br>来源：招股章程PDF</div><div class="ff codetip" data-tip="公开发售和国际配售各占多少、有没有回拨机制。它会明显影响中签率和货源集中度，但很难折算成一个分数，所以只展示、不加权。">机制项：公开占比/回拨比例/基石名单（不量化入权重）</div></div><div class="fac"><div class="ft"><span class="tip" data-tip="散户的中签比例。它和超购其实是同一件事的两面（超购越高、越难中），信息重复，单独加入反而添乱，所以只展示、不加权。它影响的是「你能拿到多少货」，不是「暗盘会涨多少」。">散户中签率<i class="q">?</i></span><span class="chip c-show">只展示</span></div><div class="fs">与超购高度共线（r=−0.72），单独解释力弱→只展示不加权。人数口径。<br>来源：i668 API</div><div class="ff codetip" data-tip="散户的中签比例。它和超购其实是同一件事的两面（超购越高、越难中），信息重复，单独加入反而添乱，所以只展示、不加权。它影响的是「你能拿到多少货」，不是「暗盘会涨多少」。">展示项：与超购 r=−0.72 共线，不单独加权</div></div><div class="fac"><div class="ft"><span class="tip" data-tip="国际配售里到底是「谁」买了——比如多少是长线基金、多少是对冲基金。这个数据只有付费数据商有，所有免费渠道都拿不到。所以模型里没有它；如果你自己知道内情，可以用报告里的「改价」把它补进去。">国配明细(长线占比)<i class="q">?</i></span><span class="chip c-miss">拿不到</span></div><div class="fs">付费数据商内容，免费源不披露国际配售认购人结构。<br>来源：—</div><div class="ff codetip" data-tip="国际配售里到底是「谁」买了——比如多少是长线基金、多少是对冲基金。这个数据只有付费数据商有，所有免费渠道都拿不到。所以模型里没有它；如果你自己知道内情，可以用报告里的「改价」把它补进去。">数据缺失：付费源，免费不披露 → 不参与</div></div><div class="fac"><div class="ft"><span class="tip" data-tip="开盘价在招股 / 暗盘阶段还没发生，逻辑上不可能存在；已上市的股票我们会用 etnet 补齐首日开盘价。所以未上市股不预测开盘价，绝不假装能算。">未上市开盘价<i class="q">?</i></span><span class="chip c-miss">拿不到</span></div><div class="fs">尚未发生，不可能存在；已上市股首日开盘由 etnet 补齐。<br>来源：—</div><div class="ff codetip" data-tip="开盘价在招股 / 暗盘阶段还没发生，逻辑上不可能存在；已上市的股票我们会用 etnet 补齐首日开盘价。所以未上市股不预测开盘价，绝不假装能算。">数据缺失：未发生，不可能存在</div></div></div>
+</section>
+
+<footer>
+<div>⚠ 免责：本预测是基于历史统计的条件分布推断，<b>不是荐股、不保收益、不是精确报价器</b>。模型只承诺「方向+区间」，点位级预测是伪命题。</div>
+<div>实时性：每次运行均实时重抓配售结果 + 恒指/A股行情并在最近12月窗口上重算分桶，故不同时段问会得到刷新后的评估。</div>
+<div>改造痕迹：静态桶→实时重算(自带动态校准) ｜ S2 残差分层修正替代全砍 ｜ S3 妖股系数标定 ｜ S1 18C去重 ｜ A+H统一口径 ｜ FLAT兜底中性化。</div>
+</footer>
+</div></body></html>

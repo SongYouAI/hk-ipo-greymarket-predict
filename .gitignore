@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# macOS
+.DS_Store
+._*
+.Spotlight-V100
+.Trashes
+
+# 编辑器
+.idea/
+.vscode/
+*.swp
+
+# 本地输出（保留 reports/ 下的样例报告）
+/reports/local-*.html
