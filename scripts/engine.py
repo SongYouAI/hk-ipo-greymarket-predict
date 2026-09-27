@@ -64,6 +64,10 @@ def pct(x, d=1):
 def stars(c):
     return "★" * c + "☆" * (3 - c)
 
+def md_off(s):
+    """终端/纯文本场景：去掉 Markdown 加粗记号（HTML 报告侧由 report.rich() 转成真加粗）。"""
+    return (s or "").replace("**", "")
+
 # ---------------------------------------------------------------------------
 # 数据获取（i668 API + 腾讯行情）
 # ---------------------------------------------------------------------------
@@ -751,13 +755,13 @@ def resolve_stock(stocks, query):
 # 核心指标 = 「首日开盘涨幅 − 暗盘涨幅」：> 0 表示"熬到首日开盘再卖"比"暗盘直接卖"更好。
 SELL_BANDS = [
     {"name": "暗盘 ≤ −10%", "grade": "exit",
-     "action": "直接清仓，现金/融资都一样",
+     "action": "直接清仓，现金/融资都一样（深破发无豁免）",
      "ev": "本档 n=6：首日开盘优于暗盘 2/6；中位差 −3.3pt；P25 −11.0pt",
-     "why": "深破发后首日平均更差，尾部极厚——样本里出现过暗盘 −3.5% 熬成首日开盘 −33.9% 的案例"},
+     "why": "深破发后首日平均更差，尾部极厚——样本里出现过暗盘 −3.5% 熬成首日开盘 −33.9% 的案例；连 A+H 的深破发（n=3）也一只都没托回发行价"},
     {"name": "暗盘 −10% ~ 0", "grade": "exit",
-     "action": "直接清仓，别等绿鞋托价",
-     "ev": "本档 n=6：首日开盘优于暗盘 3/6；中位差 −1.9pt（破发组合计 n=12：5/12 更优、中位差 −2.7pt、翻红 0/12）",
-     "why": "12 只破发样本里没有一只在首日开盘翻红；且绿鞋托价上限＝发行价，你最多卖到发行价附近，中间还要白担首日不确定性"},
+     "action": "直接清仓；**唯一豁免**见下方「破发豁免判定」",
+     "ev": "本档 n=6：首日开盘优于暗盘 3/6；中位差 −1.9pt（破发合计 n=12：5/12 更优、中位差 −2.7pt、翻红 0/12）",
+     "why": "12 只破发样本里没有一只在首日开盘翻红（涨过发行价）；但**有 3 只回到发行价附近**——那 3 只全是 A+H（有 A 股价格锚）且暗盘只小跌。绿鞋本身不是保护（有绿鞋的 9 只破发里 6 只照样崩）。"},
     {"name": "暗盘 0 ~ +20%", "grade": "sell",
      "action": "暗盘卖出为主（最多留 1/4 观察）",
      "ev": "本档 n=22：首日开盘优于暗盘 5/22（23%）；中位差 −1.8pt",
@@ -814,6 +818,55 @@ def bucket_break_prob(tiers, over):
     if not v: return None, 0
     return round(sum(1 for x in v if x < 0) / len(v) * 100, 1), len(v)
 
+def is_ah(stock):
+    """A+H：站点标了 is_ah_share 且有 A 股代码 —— 也就是有 A 股价格锚（不是「有绿鞋」）。"""
+    return bool(stock.get("is_ah_share")) and bool(stock.get("a_share_code"))
+
+BREAKEVEN_DEPTH = -5.0   # 「温和破发」与「深破发」的分界（实测：A+H 温和破发 3/3 托回发行价）
+
+def breakeven_playbook(stocks, extras):
+    """破发处置的**实测判别表**：按「A 股锚 × 破发深度」拆象限，回答
+
+        「破发之后，熬到首日开盘能不能等到买盘把价格托回发行价附近？」
+
+    实测（近 12 个月已上市、剔除 openPct 缺失样本、n=94）：
+      A+H + 温和破发(−5%~0)   3/3 回到发行价附近（立讯精密 / 安克创新 / 中际旭创）
+      A+H + 深破发(≤−5%)      0/3（滨化股份 / 普源精电 / 鼎泰高科）
+      非 A+H + 温和破发        0/2（江西生物 / 龙丰集团 —— **这两只都有绿鞋**，照样崩 −33.9% / −16.6%）
+      非 A+H + 深破发          0/4
+    结论：托不托得住，看的是**有没有 A 股锚 + 破发是否温和**，不是「有没有绿鞋」。
+    """
+    ex = extras.get("stocks", {})
+    by = {s.get("stock_code"): s for s in stocks}
+    rows = []
+    for code, v in ex.items():
+        o = num(v.get("openPct")); s = by.get(code, {})
+        dk = num(s.get("dark_pool_change_pct"))
+        if o is None or o == 0 or dk is None or not num(s.get("ipo_price")): continue
+        rows.append({"code": code, "name": re.sub(r"[^\x20-\x7e\u4e00-\u9fff]", "", str(s.get("stock_name") or ""))[:12],
+                     "dk": dk, "open": o, "gap": round(o - dk, 1),
+                     "ah": is_ah(s), "green": (v.get("pros") or {}).get("hasGreen")})
+    b = [r for r in rows if r["dk"] < 0]
+    def quad(ah, mild):
+        g = [r for r in b if r["ah"] == ah and ((r["dk"] > BREAKEVEN_DEPTH) == mild)]
+        held = [r for r in g if r["open"] >= -2.0]          # 回到发行价附近（−2% 内）
+        gaps = sorted(r["gap"] for r in g)
+        return {"label": ("A+H" if ah else "非 A+H") + (" + 温和破发（−5%~0）" if mild else " + 深破发（≤−5%）"),
+                "n": len(g), "held": len(held),
+                "med_gap": round(statistics.median(gaps), 1) if gaps else None,
+                "worst_gap": gaps[0] if gaps else None,
+                "names": [f"{r['name']} {r['dk']:+.1f}%→{r['open']:+.1f}%" for r in sorted(g, key=lambda x: -x["gap"])]}
+    gb = [r for r in b if r["green"] is True]
+    gb_held = [r for r in gb if r["open"] >= -2.0]
+    return {
+        "n": len(b), "clean_n": len(rows),
+        "quad": {"ah_mild": quad(True, True), "ah_deep": quad(True, False),
+                 "ind_mild": quad(False, True), "ind_deep": quad(False, False)},
+        "green": {"n": len(gb), "held": len(gb_held),
+                  "med_gap": round(statistics.median([r["gap"] for r in gb]), 1) if gb else None},
+        "depth": BREAKEVEN_DEPTH,
+    }
+
 def recent_check(stocks, today=None, n=12):
     """最近已上市新股的**实况回测**（每次运行实时重算，严格因果、无未来函数）。
 
@@ -854,7 +907,7 @@ def recent_check(stocks, today=None, n=12):
         }
     return {"rows": tail, "summary": summary, "all_n": len(out)}
 
-def trade_plan(target, s2, s3, extras, regime, book=None, long_sample=None, yao=None, tiers=None):
+def trade_plan(target, s2, s3, extras, regime, book=None, long_sample=None, yao=None, tiers=None, bp=None):
     """持仓处置方案：**报告直接给结论，不需要追问用户中了几手、是否融资**。
 
     结构固定（每份报告一致）：身份/风险画像 → 三情景速查 → 七档卖出规则（带依据+样本量）
@@ -875,8 +928,8 @@ def trade_plan(target, s2, s3, extras, regime, book=None, long_sample=None, yao=
     # 注意：驱动变量是「暗盘实际成交价」，不是模型预测区间——预测只用于"预期"，
     # 动作必须在暗盘 16:15–18:30 内按实际价格执行。七档明细见 bands（SELL_BANDS）。
     scenarios = [
-        {"case": "暗盘破发（< 0%）", "act": "直接清仓，现金/融资都一样——不等首日、不等绿鞋",
-         "why": "实测破发组 12 只里首日开盘翻红 0/12；且绿鞋托价上限＝发行价，等不来更好的价"},
+        {"case": "暗盘破发（< 0%）", "act": "直接清仓，现金/融资都一样——不等首日、不等绿鞋（**唯一豁免**见下方判定框）",
+         "why": "实测破发组 12 只里首日开盘翻红 0/12；绿鞋托价上限＝发行价，等不来更好的价。但注意有 3 只回到发行价附近，那 3 只全是 A+H 且只小跌"},
         {"case": "暗盘小赚（0% ~ +50%）", "act": "以暗盘卖出为主：+0~+20% 全走，+20~+50% 至少落袋 6~7 成",
          "why": "这两档「首日开盘优于暗盘」的概率只有 23% / 37%，中位差 −1.8 / −2.8pt，等首日是负期望"},
         {"case": "暗盘大赚（> +50%）", "act": "分批：暗盘先卖一半，余量持到首日开盘早段（9:30–10:00）不冲高就清",
@@ -898,7 +951,8 @@ def trade_plan(target, s2, s3, extras, regime, book=None, long_sample=None, yao=
         f"② 中签 1 手（本金约 {amt_txt}）：一手就是一发子弹，**按上面七档动作整手执行**——别拆成碎单，暗盘流动性有限，拆碎了只会吃更差的价。",
         "③ 中签多手：**按档位分批**。例：若暗盘落在 +50%~+100% 档 → 暗盘卖一半、余量留首日开盘早段；若落在 0%~+20% 档 → 一次性全走。",
         "④ 现金户唯一需要注意的：**破发时必须走**。既然没有利息压力、没有时间成本，你都判断它弱，那留着只是把'已经确定的亏损'换成'更大的不确定亏损'。",
-        "⑤ 别做的两件事：**不要在暗盘低吸加仓摊成本**（一买一卖摩擦成本 1~2%，该档统计优势仅 −3.4~+0.9pt，基本被费用吃光；且加仓 = 把同一只股敞口翻倍，是放大风险不是降低风险）；**不要因为'就剩一天了'而拖延**（首日 60% 高开低走）。",
+        "⑤ 关于「暗盘低吸加仓摊成本」：**它不改变你原本那手的盈亏，只是新增一笔独立交易**（数学见下方误区③）。捞货那笔的价差 (首开−暗盘) 要扣掉一买一卖摩擦（约 0.25~0.30% + 固定约 30 港元）才有意义；小额价差基本被吃光，且加仓＝把同一只股敞口翻倍。破发时唯一值得考虑的豁免见下方判定框。",
+        "⑥ 别因为「就剩一天了」而拖延：首日实测 60% 高开低走（收盘比开盘再低 4.5pt），越晚卖越吃亏。",
     ]
     fin_plan = [
         f"① 融资（孖展）户的成本结构不同：认购手续费约 99 HKD/笔 + **利息按日计、不中签也要付** + 中签费（约 {round(amount * FEE_ALLOT, 0):,.0f} HKD，若中 1 手）。**每多持一天都在烧钱。**",
@@ -907,17 +961,28 @@ def trade_plan(target, s2, s3, extras, regime, book=None, long_sample=None, yao=
         "④ 融资买入暗盘股票**不能再抵押融资**（各券商规则），所以别指望『低吸再加杠杆』这条路。",
         "⑤ 若中签多手且是融资：**先用暗盘了结还掉融资**，把利息链条断掉；只把确实想博的那部分（≤1/4）留在首日。",
     ]
-    # 绿鞋占比：优先用招股书披露的 greenPct；缺失时用「超额配售股数 ÷ 全球发售股数」推算
+    # 绿鞋占比：优先用招股书披露的 greenPct；缺失时用「超额配售股数 ÷ 全球发售股数」推算。
+    # ⚠ 派生路径必须套同款 3–30% 防护（抓取侧早就有，这里曾漏）：
+    #   实测 02475 立讯精密 的 greenShares 抓成 7,701,730,624 股（应为约 5750 万）→ 推算占比 2008%。
+    #   越界即说明**股数本身解析错了**，按纪律「宁可不显示数字，也不显示错的数字」→ 占比与股数一起丢。
     gpct = pros.get("greenPct")
-    if gpct is None and pros.get("greenShares"):
+    if gpct is not None and not (3.0 <= gpct <= 30.0):
+        gpct = None
+    gshares = pros.get("greenShares")
+    derived = False
+    if gpct is None and gshares:
         total_off = num(target.get("shares_offered"))
         if total_off and total_off > 0:
-            gpct = round(pros["greenShares"] / total_off * 100, 1)
+            cand = round(gshares / total_off * 100, 1)
+            if 3.0 <= cand <= 30.0:
+                gpct, derived = cand, True
+            else:
+                gshares = None
     green = {
         "has": bool(pros.get("hasGreen")),
         "pct": gpct,
-        "pct_derived": pros.get("greenPct") is None and gpct is not None,
-        "shares": pros.get("greenShares"),
+        "pct_derived": derived,
+        "shares": gshares,
         "stabilizer": pros.get("stabilizer"),
         "url": pros.get("url"),
     }
@@ -926,6 +991,93 @@ def trade_plan(target, s2, s3, extras, regime, book=None, long_sample=None, yao=
         ("暗盘（T-1 16:15–18:30）", "次优：T+0 可当日买卖，落袋即确定性"),
         ("首日收盘", "最差：多数回吐发生在盘中，等收盘等于把优势让掉"),
     ]
+    # ── 破发豁免判定：这只股到底属于哪一类？（老板实战经验 → 量化成可执行规则）
+    # 老板原话大意：「有绿鞋的项目，首日一般按发行价开，暗盘捞一点摊低成本就能赚。」
+    # 实测检验：绿鞋本身不是保护（破发+有绿鞋 9 只里 6 只照样崩）；
+    # 真正的判别变量是「A 股锚 × 破发是否温和」——A+H 且暗盘仅 −5%~0 时 3/3 回到发行价附近。
+    ah = is_ah(target)
+    ah_code = target.get("a_share_code")
+    dk_now = num(target.get("dark_pool_change_pct"))
+    mild_now = dk_now is not None and BREAKEVEN_DEPTH < dk_now < 0
+    q = (bp or {}).get("quad") or {}
+    gw = (bp or {}).get("green") or {}
+    ax, ix, ad = q.get("ah_mild") or {}, q.get("ind_mild") or {}, q.get("ah_deep") or {}
+    ah_ev = (f"实测「A+H + 温和破发（−5%~0）」{ax.get('held')}/{ax.get('n')} 只首日开盘回到发行价附近"
+             + (f"：{'、'.join(ax.get('names') or [])}。" if ax.get("names") else "。"))
+    ah_caveat = ("条件很窄，别外推：① 只在暗盘跌幅 −5%~0% 时成立；跌更深时同类 A+H 股 "
+                 f"{(ad.get('held') or 0)}/{ad.get('n') or 0} 托回（{'、'.join(ad.get('names') or [])}）；"
+                 "② 样本仅 3 只，是经验规律不是统计定理；③ 若首日开盘低于发行价 2% 以上，按普通破发处理、立即清。")
+    ind_ev = (f"实测「非 A+H + 温和破发」{(ix.get('held') or 0)}/{ix.get('n') or 0} 只托回发行价附近，"
+              f"首日开盘比暗盘再低中位 {abs(ix.get('med_gap') or 0)}pt"
+              + (f"（{'、'.join(ix.get('names') or [])}）。" if ix.get("names") else "。"))
+    if not ah:
+        break_play = {
+            "qualify": False, "mode": "no", "verdict": "不适用豁免：破发直接清仓",
+            "why": f"本股不是 A+H（没有 A 股价格锚）。{ind_ev}",
+            "caveat": ("绿鞋**不构成豁免**：上例两只都有绿鞋、暗盘也只小跌，首日开盘照样崩。"
+                       f"整体看破发 + 有绿鞋 {gw.get('n')} 只里只有 {gw.get('held')} 只回到发行价附近。"),
+            "plan": "暗盘破发即全清，不等首日、不等绿鞋。",
+        }
+    elif dk_now is None:
+        break_play = {
+            "qualify": True, "mode": "cond",
+            "verdict": f"条件性适用：只有暗盘落在 −5%~0% 时才可留半仓（现在还没暗盘，先记规则）",
+            "why": f"本股是 **A+H**（A 股 {ah_code}，有 A 股价格锚）。{ah_ev}",
+            "caveat": ah_caveat,
+            "plan": ("暗盘一旦出来就对号入座：落在 −5%~0% → 只卖一半，余量留首日开盘早段（9:30–10:00）按实际价出、"
+                     "开盘 15 分钟不冲高就清；跌破 −5% → 豁免自动失效，全清。"),
+        }
+    elif mild_now:
+        break_play = {
+            "qualify": True, "mode": "yes",
+            "verdict": f"适用：本股暗盘 {dk_now:+.1f}%，正好落在豁免区间（−5%~0%）",
+            "why": f"本股是 **A+H**（A 股 {ah_code}，有 A 股价格锚）。{ah_ev}",
+            "caveat": ah_caveat,
+            "plan": "暗盘只卖一半（留一半），余量在首日开盘早段（9:30–10:00）按实际价出；开盘 15 分钟内不冲高就清。",
+        }
+    else:
+        break_play = {
+            "qualify": False, "mode": "no",
+            "verdict": f"不适用：本股暗盘 {dk_now:+.1f}%，已超出豁免区间（−5%~0%）→ 按普通破发清仓",
+            "why": (f"本股虽是 A+H（A 股 {ah_code}），但破发太深。{ah_ev}"
+                    f"豁免只覆盖温和破发，深破发时同类 A+H 股 {(ad.get('held') or 0)}/{ad.get('n') or 0} 托回"
+                    + (f"（{'、'.join(ad.get('names') or [])}）。" if ad.get("names") else "。")),
+            "caveat": ("别因为「它是 A+H」就放宽：A 股锚只在温和破发时救得回来。"
+                       f"整体看破发 + 有绿鞋 {gw.get('n')} 只里只有 {gw.get('held')} 只回到发行价附近。"),
+            "plan": "暗盘已深破发 → 直接全清，不等首日、不等绿鞋。",
+        }
+
+    # ── 三个常见误区（用实测数据回答，不靠嘴说）
+    myths = [
+        {"t": "「只要有绿鞋的项目，首日就会按发行价开盘」",
+         "verdict": f"不成立（实测 {(gw.get('held') or 0)}/{gw.get('n') or 0}）",
+         "d": (f"绿鞋不是「开盘价 = 发行价」的保证人。实测破发 + 有绿鞋 {gw.get('n')} 只，只有 {gw.get('held')} 只"
+               f"在首日开盘回到发行价附近，另外 {(gw.get('n') or 0) - (gw.get('held') or 0)} 只继续崩"
+               f"（首开 − 暗盘中位 {gw.get('med_gap')}pt）。"),
+         "why": ("机制上：稳价人的买入发生在**首日上市后的连续交易时段**，而开盘价由**开盘前竞价**撮合产生——"
+                 "大量中签者集中抢跑时，开盘价照样可以远低于发行价。绿鞋是「破发时的托底买盘」，不是定价保证；"
+                 "它还有失效条件（国际配售未超购则不能行使）。"),
+         "fact": (f"托得住的样本全是 A+H（有 A 股价格锚）。反例：江西生物、龙丰集团**都有绿鞋**、暗盘也只小跌 "
+                  f"−3.5% / −1.5%，首日开盘却崩到 −33.9% / −16.6%。")},
+        {"t": "「暗盘破发时捞一点货，把成本摊低，首日就能赚一点」",
+         "verdict": "摊低成本是心理账户，不改变总盈亏",
+         "d": ("设发行价 P0、暗盘价 D、首日开盘价 O，中签 1 手。暗盘再捞 1 手、首日开盘卖 2 手，"
+               "总盈亏 = 2O − P0 − D = (O − P0) + (O − D)。前半段是你原仓的盈亏（捞货前后**分毫不变**），"
+               "后半段 (O − D) 才是捞货新增的那一笔交易。"),
+         "why": ("所以「摊低成本」只让账面均价好看（(P0+D)/2），不提高总收益。真正让你少亏的是"
+                 "「熬到首日开盘卖」这个动作本身，不是加仓；而加仓等于把同一只股票的敞口翻倍——"
+                 "判断对了多赚一点，判断错了双倍亏。"),
+         "fact": ("捞货那笔 (首开 − 暗盘) 的实测：A+H + 温和破发 3/3 为正（+0.2 ~ +4.9pt）；"
+                  "非 A+H 组中位 −25.3pt。再扣掉一买一卖摩擦（约 0.25~0.30% + 固定约 30 港元），小额价差基本被吃光。")},
+        {"t": "「开盘前挂一个比开盘价低的价格，直接出」",
+         "verdict": "这个动作不改变成交价",
+         "d": ("港股首日开盘价由**开盘前竞价**统一撮合（同一时段所有成交同一个价）。你在竞价里挂卖单——"
+               "哪怕挂得比预期开盘价低——成交价仍是**开盘价**，不会更低。所以这一步只等于「确保按开盘价卖出」。"),
+         "why": ("但如果你是在**开盘后的连续交易时段**挂一个远离市价的低价单，那就会真的成交在更低的价格（更差）。"
+                 "所以要么把动作限制在开盘竞价阶段，要么开盘后直接按市价卖。"),
+         "fact": "首日实测 60% 高开低走（收盘 − 开盘中位 −4.5pt），越晚卖越吃亏。"},
+    ]
+
     expect = None
     if s2:
         base, lo, hi = s2.get("base"), s2.get("loPct"), s2.get("hiPct")
@@ -944,6 +1096,9 @@ def trade_plan(target, s2, s3, extras, regime, book=None, long_sample=None, yao=
         "prob": prob, "prob_n": prob_n, "break_src": break_src,
         "fees": fees, "fee_allot": round(amount * FEE_ALLOT, 1) if amount else None,
         "scenarios": scenarios, "bands": SELL_BANDS, "intraday": intraday, "expect": expect,
+        "is_ah": ah, "ah_code": ah_code, "break_play": break_play, "myths": myths,
+        "green_stat": (bp or {}).get("green") or {},
+        "quad": (bp or {}).get("quad") or {}, "bp_n": (bp or {}).get("n"),
         "cash_plan": cash_plan, "fin_plan": fin_plan,
         "green": green, "exit_order": exit_order, "sent": (regime or {}).get("sent") or {},
         "holding_days": "暗盘至首日共约 1 天（T-1 暗盘 → T 日开盘），融资利息按这 1~2 天计",
@@ -1010,8 +1165,10 @@ def run(query, sim_date=None, out=None, no_live=False):
     openp = None
     if s2:
         openp = open_pronounce(s2["loPct"], s2["hiPct"], s2.get("base"))
+    # 破发处置判别表（老板实战经验 → 量化）：破发 × A 股锚 × 破发深度
+    bplay = breakeven_playbook(stocks, extras)
     plan = trade_plan(target, s2, s3, extras, regime, book, long_sample, ratio,
-                      tiers=[(near_sample, 8), (recent_sample, 8), (long_sample, 0)])
+                      tiers=[(near_sample, 8), (recent_sample, 8), (long_sample, 0)], bp=bplay)
     live = recent_check(stocks)
     result = {"target": target, "ctx": ctx, "regime": regime, "buckets": buckets,
               "buckets_long": buckets_long, "s1": s1, "s2": s2, "s3": s3, "open": openp,
@@ -1114,7 +1271,12 @@ def summary_text(r):
             e = p["expect"]
             L.append(f"   模型预期：暗盘{e['txt']}{'（配售结果未公布，为预估）' if e.get('provisional') else ''}")
         for i, s in enumerate(p.get("scenarios") or [], 1):
-            L.append(f"   总纲{i}. {s['case']} → {s['act']}")
+            L.append(f"   总纲{i}. {md_off(s['case'])} → {md_off(s['act'])}")
+        bpl = p.get("break_play") or {}
+        if bpl:
+            L.append(f"   破发豁免判定：{'✓ 适用' if bpl.get('qualify') else '✗ 不适用'} —— {md_off(bpl.get('verdict'))}")
+            L.append(f"      依据：{md_off(bpl.get('why'))}")
+            L.append(f"      动作：{md_off(bpl.get('plan'))}")
         L.append(f"   退出时点排序：{' ＞ '.join(x[0] for x in (p.get('exit_order') or []))}")
         g = p.get("green") or {}
         if g.get("has"):
@@ -1122,7 +1284,9 @@ def summary_text(r):
             if g.get("pct_derived"): gp += "（按股数推算）"
             gs = f"{g['shares']:,} 股" if g.get("shares") else "股数未披露"
             gst = f"稳价人 {g['stabilizer']}" if g.get("stabilizer") else "稳价人未披露"
-            L.append(f"   绿鞋：有（{gp} / {gs} / {gst}）→ 托价上限＝发行价，别指望靠它赚钱")
+            gw = p.get("green_stat") or {}
+            L.append(f"   绿鞋：有（{gp} / {gs} / {gst}）→ 托价上限＝发行价；"
+                     f"⚠ 但绿鞋不保证首日开盘回到发行价（实测破发+有绿鞋 {gw.get('n')} 只里仅 {gw.get('held')} 只托回）")
         else:
             L.append("   绿鞋：无 → 没有稳价买盘托底，破发只能自己扛")
         if p.get("fees", {}).get("total"):
@@ -1188,6 +1352,31 @@ def selfcheck(r):
         for s in (p.get("scenarios") or []):
             if not s.get("case") or not s.get("act"):
                 errs.append(f"[plan] 情景 {s.get('case')} 缺动作")
+        # 破发豁免判定必须给结论 + 依据 + 动作（且样本量必须跟着走，防止"没样本也敢下结论"）
+        bpl = p.get("break_play") or {}
+        if not bpl:
+            errs.append("[plan] 缺破发豁免判定（break_play）")
+        else:
+            if not bpl.get("verdict") or not bpl.get("plan") or not bpl.get("why"):
+                errs.append("[plan] 破发豁免判定缺 verdict/why/plan")
+            if bpl.get("qualify") and not p.get("is_ah"):
+                errs.append("[plan] 豁免判定为非 A+H 却标记 qualify（逻辑矛盾）")
+            if bpl.get("mode") not in ("yes", "no", "cond"):
+                errs.append(f"[plan] 破发豁免 mode 非法：{bpl.get('mode')}")
+            # mode=yes 只有「A+H + 暗盘确实落在 −5%~0%」才允许（防把深破发也标成适用）
+            if bpl.get("mode") == "yes" and not (p.get("is_ah") and r["target"].get("dark_pool_change_pct") is not None
+                                                 and BREAKEVEN_DEPTH < num(r["target"].get("dark_pool_change_pct")) < 0):
+                errs.append("[plan] mode=yes 但本股不满足「A+H 且暗盘 −5%~0」")
+        # 误区条目必须带实测数字（防写回"凭印象"的话术）
+        if len(p.get("myths") or []) != 3:
+            errs.append(f"[plan] 误区条目 {len(p.get('myths') or [])} ≠ 3")
+        for m in (p.get("myths") or []):
+            if not m.get("fact") or not m.get("why"):
+                errs.append(f"[plan] 误区「{m.get('t')}」缺实测依据")
+        # 绿鞋占比合理性（3–30%）：派生路径曾漏防护，算出过 2008% 的荒谬值
+        g = p.get("green") or {}
+        if g.get("pct") is not None and not (3.0 <= g["pct"] <= 30.0):
+            errs.append(f"[plan] 绿鞋占比 {g['pct']}% 越出 3–30%（应为解析错）")
     # 情绪标签与展示数字必须同窗口（防「偏冷(破发率20.8%)」自相矛盾）
     rg = r.get("regime") or {}
     if rg.get("label") not in (None, "无样本") and rg.get("break_rate") is None:

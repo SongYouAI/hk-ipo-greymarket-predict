@@ -145,6 +145,23 @@ table.bands tr.g-split td.bname{color:var(--accent-ink)}
 .exit-o .e .r{font-size:11px;color:var(--accent-ink);font-weight:600;}
 .exit-o .e .t{font-weight:600;font-size:13.5px;margin:4px 0 3px;}
 .exit-o .e .d{font-size:12px;color:var(--mut);line-height:1.55;}
+/* 破发豁免判定框 */
+.bp{margin-top:12px;border-radius:14px;padding:13px 16px;font-size:13px;line-height:1.7;
+  background:var(--soft);border:1px solid var(--line);}
+.bp.ok{background:rgba(0,122,255,.055);border-color:rgba(0,122,255,.32);}
+.bp.no{background:rgba(215,0,21,.045);border-color:rgba(215,0,21,.24);}
+.bp .bph{font-weight:650;font-size:13.5px;margin-bottom:7px;}
+.bp.ok .bph{color:var(--accent-ink);} .bp.no .bph{color:var(--neg);}
+.bp .bpr{margin-top:5px;color:var(--ink2);} .bp .bpr b{color:var(--mut);font-weight:600;margin-right:6px;}
+.bp .bpr.dim{color:var(--mut);font-size:12.5px;}
+/* 常见误区卡 */
+.myth{border:1px solid var(--line);border-radius:14px;padding:13px 16px;margin-bottom:10px;background:var(--card);}
+.myth .mt{font-weight:650;font-size:13.5px;color:var(--ink);display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;}
+.myth .mv{font-size:11.5px;font-weight:600;color:var(--neg);background:rgba(215,0,21,.07);border-radius:7px;padding:2px 8px;white-space:nowrap;}
+.myth .md,.myth .mw,.myth .mf{margin-top:6px;font-size:12.5px;line-height:1.72;color:var(--ink2);}
+.myth .mw{color:var(--mut);}
+.myth .mf{color:var(--ink2);background:var(--soft);border-radius:9px;padding:7px 10px;}
+.myth .mf::before{content:"实测 · ";color:var(--mut);font-weight:600;}
 .live{font-size:12.5px;color:var(--ink2);background:var(--soft);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-top:10px;}
 .live table{margin-top:8px;font-size:12.5px}
 @media (max-width:720px){.grid{grid-template-columns:1fr}.facgrid{grid-template-columns:1fr}
@@ -356,9 +373,12 @@ def plan_section(plan, live):
                 else "配售结果未公布，暂无法取该档频率")
     g = plan.get("green") or {}
     if g.get("has"):
+        # ⚠ 必须容忍 shares/stabilizer 缺失：占比越出 3–30% 时引擎会连股数一起丢（02475 立讯精密
+        #   的 greenShares 抓成 77 亿股），此处若按数字格式化 None 会直接抛 TypeError 让整份报告生成失败。
+        sh = f"股数 {g['shares']:,}" if g.get("shares") else "股数未披露"
+        st = g.get("stabilizer") or "稳价人未披露"
         green_n = f"有 · {g['pct']}%" if g.get("pct") is not None else "有"
-        green_sub = (f"股数 {g['shares']:,} ｜ {g['stabilizer']}" if g.get("stabilizer")
-                     else (f"股数 {g['shares']:,} ｜ 稳价人未披露" if g.get("shares") else "稳价人未披露"))
+        green_sub = f"{sh} ｜ {st}"
         if g.get("pct_derived"):
             green_sub += "（占比按股数推算）"
     else:
@@ -431,6 +451,30 @@ def plan_section(plan, live):
         <div style="margin-top:7px;color:var(--mut)">⚠ 方向命中率不高是模型的真实局限：<b>它擅长给区间水平，不擅长猜单只涨跌方向</b>。
         所以本报告的卖出动作全部按「暗盘实际落点」触发，而不是按预测方向触发。</div></div>'''
 
+    bp = plan.get("break_play") or {}
+    if bp:
+        ok = bool(bp.get("qualify"))
+        bp_html = (f'<div class="bp {"ok" if ok else "no"}">'
+                   f'<div class="bph">{rich(bp.get("verdict", ""))}</div>'
+                   f'<div class="bpr"><b>依据</b>{rich(bp.get("why", ""))}</div>'
+                   f'<div class="bpr"><b>动作</b>{rich(bp.get("plan", ""))}</div>'
+                   f'<div class="bpr dim"><b>边界</b>{rich(bp.get("caveat", ""))}</div></div>')
+    else:
+        bp_html = ""
+
+    myths_html = ""
+    if plan.get("myths"):
+        cards = ""
+        for m in plan["myths"]:
+            cards += (f'<div class="myth"><div class="mt">{rich(m.get("t", ""))}'
+                      f'<span class="mv">{esc(m.get("verdict", ""))}</span></div>'
+                      f'<div class="md">{rich(m.get("d", ""))}</div>'
+                      f'<div class="mw">{rich(m.get("why", ""))}</div>'
+                      f'<div class="mf">{rich(m.get("fact", ""))}</div></div>')
+        myths_html = f'''<h3 style="font-size:15px;margin:22px 0 6px">四、三个最容易亏钱的想当然（用实测数据回答）</h3>
+    <div class="note">这三条是打电话问得最多的，也是最容易让人在暗盘做反动作的。结论都来自本报告同一批样本的实测。</div>
+    {cards}'''
+
     return f'''<section class="plan"><h2>中签之后怎么操作（处置单）</h2>
     <div class="note">本节的目的：<b>你不需要回答任何问题</b>——中几手、现金还是融资、什么价位，各种情况都写在下面，照着对号入座即可。</div>
     {kpi}{exp_html}
@@ -439,18 +483,20 @@ def plan_section(plan, live):
     <h3 style="font-size:15px;margin:20px 0 4px">二、按{tip('卖出档')}照表执行（暗盘 16:15–18:30 内看实际价）</h3>
     <table class="bands"><tr><th>暗盘实际落点</th><th>动作</th><th>实测依据</th><th>为什么</th></tr>{brows}</table>
     <div class="note">依据口径：近 12 个月已上市新股，剔除缺失样本后 n=94；核心比较项 = 「首日开盘涨幅 − 暗盘涨幅」，大于 0 表示「熬到首日再卖」好过「暗盘直接卖」。</div>
+    {bp_html}
     <h3 style="font-size:15px;margin:20px 0 4px">三、盘中形态怎么应对（数据边界如实说明）</h3>
     {obs}
-    <h3 style="font-size:15px;margin:20px 0 4px">四、现金打新 / 融资打新，分别怎么做</h3>
+    {myths_html}
+    <h3 style="font-size:15px;margin:20px 0 4px">五、现金打新 / 融资打新，分别怎么做</h3>
     <div class="two">
       <div class="colus"><h4>💰 现金打新</h4>{ul(plan.get("cash_plan") or [])}</div>
       <div class="colus"><h4>🏦 融资打新（孖展）</h4>{ul(plan.get("fin_plan") or [])}</div>
     </div>
-    <h3 style="font-size:15px;margin:20px 0 4px">五、{tip('退出时点')}排序</h3>
+    <h3 style="font-size:15px;margin:20px 0 4px">六、{tip('退出时点')}排序</h3>
     {exits}
-    <div class="note warn">⚠ <b>关于绿鞋，一个必须纠正的常见误解：</b>绿鞋（超额配售权）的稳价人只在<b>跌破发行价时</b>买入，
+    <div class="note warn">⚠ <b>绿鞋的机制细节（与上方误区①配合看）：</b>稳价人只在<b>跌破发行价时</b>买入，
     且<b>买入价不得高于发行价</b>（上市规则 9.23），规模 ≤ 发行量 15%、窗口 ≤ 上市日起 30 个日历日。
-    所以「第二天开盘卖给绿鞋赚一笔」在机制上不成立——托价上限就是发行价。另外，本站因子库显示
+    所以「第二天开盘卖给绿鞋赚一笔」在机制上不成立——托价上限就是发行价。另外本站因子库显示
     <b>2026 年不少 A+H 股为「首日入通」主动放弃了绿鞋</b>，所以第一步永远是先确认这只到底有没有
     （见上方 KPI 与{tip('绿鞋托价')}）。</div>
     {live_html}
