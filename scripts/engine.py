@@ -189,12 +189,18 @@ def build_sponsor_book(stocks, extras):
     for s in stocks:
         fdc = num(s.get("first_day_close_price")); ipo = num(s.get("ipo_price"))
         if fdc is None or not ipo or ipo <= 0: continue
-        # ⚠️ openPct 为缺失哨兵（None / 精确 0）→ 整行不完整，收盘价同样不可信，剔除。
-        #    实测：大金重工、爱芯元智 的 ipo == first_day_close 精确相等（占位），
-        #    若计入会给其保荐人塞一个假的 0% 收益。真实非 0 开盘的行不受影响。
+        # ⚠️ 剔除占位行必须**两个哨兵信号同时出现**，不能只看一个（2026-09-27 踩过）：
+        #    · 信号① `openPct` 为缺失哨兵（None / 精确 0，来自 extras.json 构建期抓取）
+        #    · 信号② `first_day_close_price == ipo_price` 精确相等（来自实时 API，独立数据源）
+        #    只有①②同时成立才是抓取失败的占位（大金重工 66.400=66.400、爱芯元智 28.200=28.200）。
+        #    ⚠️ 只看①是**过激的**：openPct 来自 extras.json、fdc 来自实时 API，是两个独立源；
+        #       实测 16 只 openPct 为哨兵的股票里有 14 只 fdc 是**真实值**（−56.9%、−27.0%、+4.7%…），
+        #       误剔会把保荐人基准从 15.2% 虚推到 35.1%（比不剔除更错），并静默改变全部预测区间。
+        #    ⚠️ 只看②也是**不对的**：晶合集成（开盘 +11.5%）等收盘恰等于发行价，那可能是
+        #       **稳价人钉在发行价的真实形态**，属于有效信号，不该丢。
         _e = extras.get("stocks", {}).get(s.get("stock_code")) or {}
         _op = num(_e.get("openPct"))
-        if _op is None or _op == 0: continue
+        if (_op is None or _op == 0) and abs(fdc - ipo) < 1e-9: continue
         v = (fdc / ipo - 1) * 100
         for nm in (_e.get("sp") or []):
             per.setdefault(nm, []).append(v)
@@ -1384,8 +1390,10 @@ def summary_text(r):
     lv = r.get("live") or {}
     if lv.get("summary"):
         s = lv["summary"]
-        L.append(f"[实况回测] 最近 {s['n']} 只已上市新股（{s['span']}）用同一算法滚动预测："
-                 f"MAE {s['mae']}pt、中位偏差 {s['med_err']}pt、"
+        # ⚠️ 措辞必须写清覆盖范围：回测只跑「分层分桶中枢」，不含保荐人/基石/残差分层等个股因子调整。
+        #    写「同一算法」是过度声明——实测把保荐人基准改错 +20pt，MAE 一动不动（回测根本不读保荐人库）。
+        L.append(f"[实况回测] 最近 {s['n']} 只已上市新股（{s['span']}）滚动预测（覆盖范围＝分层分桶中枢，"
+                 f"不含保荐人/基石等个股因子）：MAE {s['mae']}pt、中位偏差 {s['med_err']}pt、"
                  f"方向命中 {s['dir_hit']}/{s['n']}、破发识别 {s['break_called']}/{s['break_n']}")
     return "\n".join(L)
 
