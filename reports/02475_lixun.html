@@ -1,0 +1,401 @@
+<!doctype html><html lang="zh"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>港股打新预测 · 立讯精密</title><style>
+:root{
+  --bg:#fbfbfd; --card:#ffffff; --soft:#f5f5f7; --soft2:#fafafc;
+  --ink:#1d1d1f; --ink2:#3a3a3c; --mut:#6e6e73; --mut2:#8e8e93;
+  --line:#e8e8ed; --line2:#d2d2d7;
+  --accent:#0071e3; --accent-ink:#0066cc; --accent-soft:#eef6fe;
+  --pos:#d70015; --neg:#0b8043; --flat:#8e8e93;
+  --amber:#b7791f; --amber-bg:#fff7e8; --amber-line:#f0d9ad;
+  --shadow-sm:0 1px 2px rgba(0,0,0,.05);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-size:15px;
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Helvetica Neue","Microsoft YaHei",sans-serif;
+  line-height:1.62;-webkit-font-smoothing:antialiased;}
+.wrap{max-width:1040px;margin:0 auto;padding:44px 24px 80px;}
+header{display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:14px;
+  padding-bottom:22px;border-bottom:1px solid var(--line);}
+h1{font-size:30px;margin:0;font-weight:700;letter-spacing:-.02em;}
+h1 .code{color:var(--mut);font-size:16px;font-weight:500;margin-left:10px;font-variant-numeric:tabular-nums;}
+.sub{color:var(--mut);font-size:13px;margin-top:7px;}
+.tag{display:inline-block;background:var(--soft);color:var(--ink2);border:1px solid var(--line);
+  border-radius:999px;padding:4px 13px;font-size:12.5px;margin:10px 6px 0 0;}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:24px 0;}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:20px;
+  position:relative;box-shadow:var(--shadow-sm);}
+.card.cur{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft),0 12px 30px rgba(0,113,227,.13);}
+.card h3{margin:0 0 8px;font-size:13px;color:var(--mut);font-weight:600;}
+.range{font-size:27px;font-weight:700;margin:6px 0;letter-spacing:-.02em;font-variant-numeric:tabular-nums;}
+.center{color:var(--ink2);font-size:13px;margin:4px 0;}
+.price{color:var(--mut);font-size:12px;margin-top:8px;font-variant-numeric:tabular-nums;}
+.stars{color:#f5a623;letter-spacing:2px;font-size:13px;}
+.lo{color:var(--neg)} .hi{color:var(--pos)}
+.badge{position:absolute;top:15px;right:15px;font-size:11px;padding:3px 10px;border-radius:999px;font-weight:600;}
+.b-prov{background:var(--amber-bg);color:var(--amber);}
+.b-cur{background:var(--accent);color:#fff;}
+.b-done{background:#e7f7ee;color:var(--neg);}
+.b-wait{background:var(--soft);color:var(--mut2);}
+section{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:24px;margin:18px 0;box-shadow:var(--shadow-sm);}
+section h2{margin:0 0 18px;font-size:18px;font-weight:600;letter-spacing:-.01em;display:flex;align-items:center;gap:10px;}
+section h2::before{content:"";width:3px;height:16px;border-radius:2px;background:var(--accent);}
+table{width:100%;border-collapse:collapse;font-size:13.5px;}
+th,td{text-align:left;padding:11px 12px;border-bottom:1px solid var(--line);vertical-align:top;}
+th{color:var(--mut);font-weight:600;font-size:12.5px;background:transparent;}
+tr:last-child td{border-bottom:none;}
+td.k{font-weight:600;white-space:nowrap;}
+td.v{font-variant-numeric:tabular-nums;white-space:nowrap;}
+td.v.pos{color:var(--pos)} td.v.neg{color:var(--neg)} td.v.flat{color:var(--flat)}
+.base{font-weight:600} .delta{color:var(--ink2)} .info{color:var(--mut)}
+.kpis{display:flex;flex-wrap:wrap;gap:12px;margin:10px 0;}
+.kpi{flex:1;min-width:150px;background:var(--soft);border:1px solid var(--line);border-radius:14px;padding:14px 16px;}
+.kpi .n{font-size:22px;font-weight:700;letter-spacing:-.01em;font-variant-numeric:tabular-nums;}
+.kpi .l{font-size:12px;color:var(--mut);margin-top:2px;}
+.note{font-size:12.5px;color:var(--ink2);background:var(--soft);border-left:3px solid var(--line2);
+  padding:10px 14px;border-radius:0 10px 10px 0;margin:12px 0;}
+.warn{border-left-color:var(--amber-line);background:var(--amber-bg);color:var(--amber);}
+.facgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.fac{background:var(--soft2);border:1px solid var(--line);border-radius:14px;padding:14px 16px;}
+.fac .ft{font-weight:600;font-size:14px;} .fac .fs{font-size:12.5px;color:var(--mut);margin-top:5px;}
+.chip{font-size:11px;padding:2px 8px;border-radius:999px;margin-left:7px;font-weight:600;}
+.c-use{background:#e7f7ee;color:var(--neg)} .c-show{background:var(--amber-bg);color:var(--amber)} .c-miss{background:#fdecec;color:#c0392b}
+footer{color:var(--mut);font-size:12px;margin-top:28px;border-top:1px solid var(--line);padding-top:16px;line-height:1.75;}
+footer b{color:var(--ink2)}
+.open{background:linear-gradient(180deg,#fffdf8,#fff9ef);border-color:var(--amber-line);}
+.open h2::before{background:var(--amber);}
+.calcwrap{display:flex;flex-direction:column;gap:12px;margin:8px 0;}
+.calc{display:flex;gap:14px;background:var(--soft2);border:1px solid var(--line);border-left-width:3px;border-radius:14px;padding:14px 16px;}
+.calc.c-base{border-left-color:var(--accent)}
+.calc.c-delta{border-left-color:#5e5ce6}
+.calc.c-info{border-left-color:var(--line2)}
+.cno{flex:0 0 26px;height:26px;border-radius:50%;background:var(--accent-soft);color:var(--accent-ink);
+  font-weight:700;display:flex;align-items:center;justify-content:center;font-size:12.5px}
+.cbody{flex:1;min-width:0}
+.ck{font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.ctag{font-size:11px;padding:2px 8px;border-radius:999px;background:var(--soft);color:var(--mut);
+  font-weight:500;border:1px solid var(--line)}
+.cv{font-weight:700;font-variant-numeric:tabular-nums}
+.cv.pos{color:var(--pos)} .cv.neg{color:var(--neg)}
+.cform{margin:9px 0 5px;display:flex;gap:8px;align-items:flex-start}
+.cform-l{flex:0 0 auto;font-size:11px;color:var(--accent-ink);background:var(--accent-soft);
+  border-radius:6px;padding:3px 9px;margin-top:2px;font-weight:600}
+.cform code{flex:1;display:block;background:var(--soft);border:1px solid var(--line);border-radius:10px;padding:9px 11px;
+  font-family:"SFMono-Regular",ui-monospace,Consolas,"Liberation Mono",monospace;font-size:12.5px;color:var(--ink2);
+  white-space:pre-wrap;word-break:break-word;line-height:1.55;}
+.cd{font-size:12.5px;color:var(--mut);margin-top:5px}
+.clohi{font-size:12px;color:var(--ink2);margin-top:5px;font-variant-numeric:tabular-nums}
+.fac .ff{margin-top:8px;font-family:"SFMono-Regular",ui-monospace,Consolas,"Liberation Mono",monospace;font-size:11.5px;
+  color:var(--ink2);background:var(--soft);border:1px solid var(--line);border-radius:9px;padding:7px 9px;
+  white-space:pre-wrap;word-break:break-word;}
+/* —— 悬停通俗解释（Apple 风深色气泡） —— */
+.tip,.codetip{position:relative;cursor:help;}
+.tip{border-bottom:1px dashed var(--line2);}
+.tip .q{display:inline-flex;align-items:center;justify-content:center;width:13px;height:13px;border-radius:50%;
+  background:var(--accent-soft);color:var(--accent-ink);font-size:9px;font-weight:700;font-style:normal;
+  margin-left:5px;vertical-align:1px;}
+.tip::after,.codetip::after{content:attr(data-tip);position:absolute;left:var(--tipx,0);top:calc(100% + 9px);z-index:60;
+  width:330px;max-width:76vw;background:#1d1d1f;color:#f5f5f7;font-weight:400;font-size:12.5px;line-height:1.66;
+  letter-spacing:0;text-align:left;padding:12px 14px;border-radius:12px;box-shadow:0 16px 44px rgba(0,0,0,.28);
+  opacity:0;visibility:hidden;transform:translateY(-4px);transition:opacity .16s ease,transform .16s ease;
+  pointer-events:none;white-space:normal;word-break:break-word;}
+.tip.flip::after,.codetip.flip::after{top:auto;bottom:calc(100% + 9px);transform:translateY(4px);}
+.tip.flip:hover::after,.codetip.flip:hover::after{transform:translateY(0)}
+.tip:hover::after,.codetip:hover::after{opacity:1;visibility:visible;transform:translateY(0)}
+.tip:hover,.codetip:hover{color:var(--ink)}
+/* —— 持仓处置单（本报告的重点章节，视觉上要压过其他节） —— */
+section.plan{border:1px solid #cfd8e3;background:linear-gradient(180deg,#ffffff,#f8fafd);
+  box-shadow:0 10px 34px rgba(0,60,140,.08);}
+section.plan h2{font-size:20px;}
+section.plan h2::before{background:linear-gradient(180deg,var(--accent),#5e5ce6);height:20px;}
+.pl-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:0 0 16px;}
+.pl-kpi{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:13px 15px;}
+.pl-kpi .l{font-size:11.5px;color:var(--mut);}
+.pl-kpi .n{font-size:20px;font-weight:700;margin-top:3px;letter-spacing:-.01em;font-variant-numeric:tabular-nums;}
+.pl-kpi .n.small{font-size:14px;line-height:1.45;}
+.scn{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:14px 0;}
+.scn .s{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;border-top:3px solid var(--accent);}
+.scn .s.exit{border-top-color:var(--neg)} .scn .s.sell{border-top-color:var(--amber)} .scn .s.split{border-top-color:var(--accent);}
+.scn .s .c{font-weight:600;font-size:13.5px;margin-bottom:6px;}
+.scn .s .a{font-size:13px;color:var(--ink2);line-height:1.6;}
+.scn .s .w{font-size:12px;color:var(--mut);margin-top:7px;border-top:1px dashed var(--line);padding-top:7px;}
+table.bands td.bname{font-weight:600;white-space:nowrap;font-variant-numeric:tabular-nums;}
+table.bands td.ev{font-size:12.5px;color:var(--mut);font-variant-numeric:tabular-nums;}
+table.bands tr.g-exit td.bname{color:var(--neg)}
+table.bands tr.g-sell td.bname{color:var(--amber)}
+table.bands tr.g-split td.bname{color:var(--accent-ink)}
+.obs{display:flex;flex-direction:column;gap:8px;margin:10px 0;}
+.obs .o{display:flex;gap:11px;font-size:13px;align-items:flex-start;background:var(--soft2);
+  border:1px solid var(--line);border-radius:11px;padding:10px 13px;}
+.obs .o b{flex:0 0 auto;color:var(--ink);min-width:132px;}
+.obs .o span{color:var(--ink2);flex:1;}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:12px 0;}
+.two .colus{background:var(--soft2);border:1px solid var(--line);border-radius:14px;padding:15px 17px;}
+.two .colus h4{margin:0 0 9px;font-size:14px;font-weight:600;}
+.two .colus ul{margin:0;padding-left:17px;} .two .colus li{font-size:12.8px;color:var(--ink2);margin-bottom:7px;line-height:1.62;}
+.exit-o{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0;}
+.exit-o .e{flex:1;min-width:190px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;}
+.exit-o .e .r{font-size:11px;color:var(--accent-ink);font-weight:600;}
+.exit-o .e .t{font-weight:600;font-size:13.5px;margin:4px 0 3px;}
+.exit-o .e .d{font-size:12px;color:var(--mut);line-height:1.55;}
+/* 破发豁免判定框 */
+.bp{margin-top:12px;border-radius:14px;padding:13px 16px;font-size:13px;line-height:1.7;
+  background:var(--soft);border:1px solid var(--line);}
+.bp.ok{background:rgba(0,122,255,.055);border-color:rgba(0,122,255,.32);}
+.bp.no{background:rgba(215,0,21,.045);border-color:rgba(215,0,21,.24);}
+.bp .bph{font-weight:650;font-size:13.5px;margin-bottom:7px;}
+.bp.ok .bph{color:var(--accent-ink);} .bp.no .bph{color:var(--neg);}
+.bp .bpr{margin-top:5px;color:var(--ink2);} .bp .bpr b{color:var(--mut);font-weight:600;margin-right:6px;}
+.bp .bpr.dim{color:var(--mut);font-size:12.5px;}
+/* 常见误区卡 */
+.myth{border:1px solid var(--line);border-radius:14px;padding:13px 16px;margin-bottom:10px;background:var(--card);}
+.myth .mt{font-weight:650;font-size:13.5px;color:var(--ink);display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;}
+.myth .mv{font-size:11.5px;font-weight:600;color:var(--neg);background:rgba(215,0,21,.07);border-radius:7px;padding:2px 8px;white-space:nowrap;}
+.myth .md,.myth .mw,.myth .mf{margin-top:6px;font-size:12.5px;line-height:1.72;color:var(--ink2);}
+.myth .mw{color:var(--mut);}
+.myth .mf{color:var(--ink2);background:var(--soft);border-radius:9px;padding:7px 10px;}
+.myth .mf::before{content:"实测 · ";color:var(--mut);font-weight:600;}
+.live{font-size:12.5px;color:var(--ink2);background:var(--soft);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-top:10px;}
+.live table{margin-top:8px;font-size:12.5px}
+@media (max-width:720px){.grid{grid-template-columns:1fr}.facgrid{grid-template-columns:1fr}
+  .pl-grid{grid-template-columns:1fr 1fr}.scn{grid-template-columns:1fr}.two{grid-template-columns:1fr}}
+@media print{.tip::after,.codetip::after{display:none}.tip,.codetip{border-bottom:none}}
+</style></head>
+<body><div class="wrap">
+<header>
+  <div><h1>立讯精密<span class="code">02475</span></h1>
+  <div class="sub">发行价 63.280 ｜ 招股截止 2026-07-06 ｜ 暗盘 2026-07-08 ｜ 上市 2026-07-09</div></div>
+  <div class="sub">生成于 2026-09-27 16:03<br>数据：i668 实时 API + 腾讯行情 + 内置因子库(117)</div>
+</header>
+
+<div class="tag">恒指 -1.0%</div>
+<div class="tag">市况 偏冷（近30天）</div>
+<div class="tag">校准样本 近3月 29 / 近6月 73 / 近12月 106</div>
+<div class="tag">妖股系数 1.01</div>
+
+<div class="grid">
+  <div class="card">
+      <h3>招股期预测</h3>
+      <div class="range"><span class="lo">-3.6%</span> ~ <span class="hi">+8.9%</span></div>
+      <div class="center">中枢 <b class="base">+2.7%</b> ｜ <span class="stars">★☆☆</span></div>
+      <div class="price">价格 61.002 ~ 68.912 HKD</div>
+    </div>
+  <div class="card">
+      <h3>中签后预测（暗盘收盘）</h3>
+      <div class="range"><span class="lo">-3.6%</span> ~ <span class="hi">+6.8%</span></div>
+      <div class="center">中枢 <b class="base">+4.8%</b> ｜ <span class="stars">★★☆</span></div>
+      <div class="price">价格 61.002 ~ 67.583 HKD</div>
+    </div>
+  <div class="card cur"><span class="badge b-cur">当前</span>
+      <h3>暗盘后预测（首日开盘）</h3>
+      <div class="range"><span class="lo">-12.0%</span> ~ <span class="hi">+8.0%</span></div>
+      <div class="center">中枢 <b class="base">-2.0%</b> ｜ <span class="stars">★★★</span></div>
+      <div class="price">价格 55.686 ~ 68.342 HKD</div>
+    </div>
+</div>
+
+<section><h2>三阶段预测结论</h2>
+<table><tr><th>阶段</th><th>预测区间(相对发行价)</th><th>中枢</th><th>置信</th><th>价格区间(HKD)</th></tr>
+<tr><td class="k">S1 招股期</td><td><span class="lo">-3.6%</span> ~ <span class="hi">+8.9%</span></td><td class="base">+2.7%</td><td><span class="stars">★☆☆</span></td><td class="v">61.002 ~ 68.912</td></tr>
+<tr><td class="k">S2 中签后·暗盘收盘</td><td><span class="lo">-3.6%</span> ~ <span class="hi">+6.8%</span></td><td class="base">+4.8%</td><td><span class="stars">★★☆</span></td><td class="v">61.002 ~ 67.583</td></tr>
+<tr><td class="k">S3 暗盘后·首日开盘</td><td><span class="lo">-12.0%</span> ~ <span class="hi">+8.0%</span></td><td class="base">-2.0%</td><td><span class="stars">★★★</span></td><td class="v">55.686 ~ 68.342</td></tr>
+</table>
+<div class="note">区间 = 该条件集的 [P25,P75] 不对称分位（真实 50% 中央区间）。<b>区间越宽 = 这只股在历史样本里越没规律</b>，如实告知，比假装精确有用。</div>
+</section>
+
+<section class="plan"><h2>中签之后怎么操作（处置单）</h2>
+    <div class="note">本节的目的：<b>你不需要回答任何问题</b>——中几手、现金还是融资、什么价位，各种情况都写在下面，照着对号入座即可。</div>
+    <div class="pl-grid">
+      <div class="pl-kpi"><div class="l">一手本金（100 股 × 63.28 港元）</div>
+        <div class="n">6,328<span style="font-size:12px;color:var(--mut)"> HKD</span></div></div>
+      <div class="pl-kpi"><div class="l"><span class="tip" data-tip="这一档热度（比如超购 100–500 倍）历史上出现「暗盘收在发行价以下」的比例。它是实测频率，不是模型预测——用来说明这档大概有多少比例是亏的。">破发概率<i class="q">?</i></span>（0–15倍）</div>
+        <div class="n">60.0%</div><div class="l" style="margin-top:3px">近端分层窗口 · n=5</div></div>
+      <div class="pl-kpi"><div class="l"><span class="tip" data-tip="绿鞋 = 「超额配股权」。承销商可以多卖约 15% 的股票；上市后 30 天内如果跌破发行价，稳价人可以买入托价。所以「有绿鞋 = 破发时下方有人接」。港股几乎人人都有，区分度低，只展示、不进打分。">绿鞋<i class="q">?</i></span></div>
+        <div class="n small">有</div><div class="l" style="margin-top:3px">股数未披露 ｜ 高盛（亞洲）有限責任公司</div></div>
+      <div class="pl-kpi"><div class="l"><span class="tip" data-tip="一买一卖要交的钱：印花税 0.1%×2 + 券商佣金 + 平台费 + 结算费，合起来大约 1%~2% 就被吃掉了。意思是「低吸再倒手」这种操作，得先赚回这笔钱才叫赚钱。">摩擦成本<i class="q">?</i></span>（一买一卖）</div>
+        <div class="n">49.5<span style="font-size:12px;color:var(--mut)"> HKD</span></div>
+        <div class="l" style="margin-top:3px">打平需 0.78%</div></div>
+    </div><div class="note"><b>模型预期（供参考，不是动作依据）</b>：<span class="tip" data-tip="暗盘 = 新股正式上市前一天的「场外预演交易」，时间通常是上市前一日 16:15–18:30。不通过交易所，由各家券商自己撮合，所以不同券商报的价可能不一样。它能买卖、T+0 当天可进出，是打新人最先能脱手的地方；港股通不能参与，也不是每只新股都有暗盘。">暗盘<i class="q">?</i></span>落在 -3.6% ~ +6.8%（中枢 +4.8%），对应卖出档「暗盘 0 ~ +20%」，该档历史动作：暗盘卖出为主（最多留 1/4 观察）</div>
+    <h3 style="font-size:15px;margin:20px 0 4px">一、三条总纲（先看这个）</h3>
+    <div class="scn"><div class="s exit"><div class="c">暗盘破发（&lt; 0%）</div><div class="a">直接清仓，现金/融资都一样——不等首日、不等绿鞋（<b>唯一豁免</b>见下方判定框）</div><div class="w">实测破发组 12 只里首日开盘翻红 0/12；绿鞋托价上限＝发行价，等不来更好的价。但注意有 3 只回到发行价附近，那 3 只全是 A+H 且只小跌</div></div><div class="s sell"><div class="c">暗盘小赚（0% ~ +50%）</div><div class="a">以暗盘卖出为主：+0~+20% 全走，+20~+50% 至少落袋 6~7 成</div><div class="w">这两档「首日开盘优于暗盘」的概率只有 23% / 37%，中位差 −1.8 / −2.8pt，等首日是负期望</div></div><div class="s split"><div class="c">暗盘大赚（&gt; +50%）</div><div class="a">分批：暗盘先卖一半，余量持到首日开盘早段（9:30–10:00）不冲高就清</div><div class="w">该档「首日开盘优于暗盘」61%（+50~+100%）/ 57%（&gt;+200%），但方差极大（P25 −5.6 / −15pt），不分批就是把到手利润交回去</div></div></div>
+    <h3 style="font-size:15px;margin:20px 0 4px">二、按<span class="tip" data-tip="按「暗盘实际成交涨幅」划分的 7 个区间，每个区间配一套动作。为什么按落点分而不是按预测分？因为动作必须在暗盘那两个小时里当场做，只有实际价格是确定的。">卖出档<i class="q">?</i></span>照表执行（暗盘 16:15–18:30 内看实际价）</h3>
+    <table class="bands"><tr><th>暗盘实际落点</th><th>动作</th><th>实测依据</th><th>为什么</th></tr><tr class="g-exit"><td class="bname">暗盘 ≤ −10%</td><td>直接清仓，现金/融资都一样（深破发无豁免）</td><td class="ev">本档 n=6：首日开盘优于暗盘 2/6；中位差 −3.3pt；P25 −11.0pt</td><td class="ev">深破发后首日平均更差，尾部极厚——样本里出现过暗盘 −3.5% 熬成首日开盘 −33.9% 的案例；连 A+H 的深破发（n=3）也一只都没托回发行价</td></tr><tr class="g-exit"><td class="bname">暗盘 −10% ~ 0</td><td>直接清仓；<b>唯一豁免</b>见下方「破发豁免判定」</td><td class="ev">本档 n=6：首日开盘优于暗盘 3/6；中位差 −1.9pt（破发合计 n=12：5/12 更优、中位差 −2.7pt、翻红 0/12）</td><td class="ev">12 只破发样本里没有一只在首日开盘翻红（涨过发行价）；但<b>有 3 只回到发行价附近</b>——那 3 只全是 A+H（有 A 股价格锚）且暗盘只小跌。绿鞋本身不是保护（有绿鞋的 9 只破发里 6 只照样崩）。</td></tr><tr class="g-sell"><td class="bname">暗盘 0 ~ +20%</td><td>暗盘卖出为主（最多留 1/4 观察）</td><td class="ev">本档 n=22：首日开盘优于暗盘 5/22（23%）；中位差 −1.8pt</td><td class="ev">小幅盈利时等首日的胜率只有 23%，是全样本最差的一档——落袋为优</td></tr><tr class="g-sell"><td class="bname">暗盘 +20% ~ +50%</td><td>暗盘分批卖出，先落袋 6~7 成</td><td class="ev">本档 n=19：首日开盘优于暗盘 7/19（37%）；中位差 −2.8pt</td><td class="ev">中高盈利时首日普遍回吐，先把大头变成现金</td></tr><tr class="g-split"><td class="bname">暗盘 +50% ~ +100%</td><td>分批：暗盘卖一半，余量持到首日开盘早段卖</td><td class="ev">本档 n=23：首日开盘优于暗盘 14/23（61%）；中位差 +1.6pt；P25 −5.6pt</td><td class="ev">期望微正但方差大，分批把&#x27;赌对/赌错&#x27;都锁在可承受范围</td></tr><tr class="g-split"><td class="bname">暗盘 +100% ~ +200%</td><td>暗盘落袋 6~7 成，余量设移动止盈</td><td class="ev">本档 n=11：首日开盘优于暗盘 5/11（45%）；中位差 −1.4pt；P25 −11.5pt</td><td class="ev">翻倍以上首日不确定性放大；且首日 60% 高开低走（收盘−开盘中位 −4.5pt）</td></tr><tr class="g-split"><td class="bname">暗盘 &gt; +200%</td><td>大比例落袋（≥7 成），余量用移动止盈博尾段</td><td class="ev">本档 n=7：首日开盘优于暗盘 4/7（57%）；中位差 +9.0pt，但 P25 −15.0pt、最差 −24.8pt</td><td class="ev">中位很甜、方差失控：P25 已是 −15pt，等于约 1/4 概率把到手利润吐掉一大块</td></tr></table>
+    <div class="note">依据口径：近 12 个月已上市新股，剔除缺失样本后 n=94；核心比较项 = 「首日开盘涨幅 − 暗盘涨幅」，大于 0 表示「熬到首日再卖」好过「暗盘直接卖」。</div>
+    <div class="bp ok"><div class="bph">适用：本股暗盘 -4.9%，正好落在豁免区间（−5%~0%）</div><div class="bpr"><b>依据</b>本股是 <b>A+H</b>（A 股 002475，有 A 股价格锚）。实测「A+H + 温和破发（−5%~0）」3/3 只首日开盘回到发行价附近：立讯精密 -4.9%→-0.0%、安克创新 -3.8%→-0.0%、中际旭创 -1.1%→-0.9%。</div><div class="bpr"><b>动作</b>暗盘只卖一半（留一半），余量在首日开盘早段（9:30–10:00）按实际价出；开盘 15 分钟内不冲高就清。</div><div class="bpr dim"><b>边界</b>条件很窄，别外推：① 只在暗盘跌幅 −5%~0% 时成立；跌更深时同类 A+H 股 0/3 托回（滨化股份 -21.3%→-21.3%、普源精电 -17.3%→-18.7%、鼎泰高科 -9.2%→-13.2%）；② 样本仅 3 只，是经验规律不是统计定理；③ 若首日开盘低于发行价 2% 以上，按普通破发处理、立即清。</div></div>
+    <h3 style="font-size:15px;margin:20px 0 4px">三、盘中形态怎么应对（数据边界如实说明）</h3>
+    <div class="obs"><div class="o"><b>暗盘开盘后 15 分钟（约 16:30 前）</b><span>先别急着全平：用这 15 分钟看方向——若开盘即冲高后回落幅度 &gt; 开盘价的 5%，按『高开低走』处理，直接清</span></div><div class="o"><b>高开低走（冲高后跌破开盘价）</b><span>不恋战：本档动作打对折执行（示例：原本留一半，改成只留 1/4），余量设『跌破开盘价 3% 即清』</span></div><div class="o"><b>低开高走（先跌后收复开盘价并放量）</b><span>可给该股额外 15 分钟观察窗；若收复后站上开盘价，按本档动作正常执行</span></div><div class="o"><b>全程缩量横盘</b><span>以本档动作为准，不因『看起来没跌』拖延——缩量横盘在暗盘里最常见的结局是首日开盘直接低开</span></div><div class="o"><b>数据边界（重要）</b><span>本站取不到暗盘的分时/最高/最低/成交量，所以『这只暗盘会高开低走还是低开高走』<b>无法用数据预测</b>；以上是执行纪律，不是预测。请以你券商 App 的实时报价为准（各券商暗盘独立撮合、价格不同）。</span></div></div>
+    <h3 style="font-size:15px;margin:22px 0 6px">四、三个最容易亏钱的想当然（用实测数据回答）</h3>
+    <div class="note">这三条是打电话问得最多的，也是最容易让人在暗盘做反动作的。结论都来自本报告同一批样本的实测。</div>
+    <div class="myth"><div class="mt">「只要有绿鞋的项目，首日就会按发行价开盘」<span class="mv">不成立（实测 3/9）</span></div><div class="md">绿鞋不是「开盘价 = 发行价」的保证人。实测破发 + 有绿鞋 9 只，只有 3 只在首日开盘回到发行价附近，另外 6 只继续崩（首开 − 暗盘中位 0.0pt）。</div><div class="mw">机制上：稳价人的买入发生在<b>首日上市后的连续交易时段</b>，而开盘价由<b>开盘前竞价</b>撮合产生——大量中签者集中抢跑时，开盘价照样可以远低于发行价。绿鞋是「破发时的托底买盘」，不是定价保证；它还有失效条件（国际配售未超购则不能行使）。</div><div class="mf">托得住的样本全是 A+H（有 A 股价格锚）。反例：江西生物、龙丰集团<b>都有绿鞋</b>、暗盘也只小跌 −3.5% / −1.5%，首日开盘却崩到 −33.9% / −16.6%。</div></div><div class="myth"><div class="mt">「暗盘破发时捞一点货，把成本摊低，首日就能赚一点」<span class="mv">摊低成本是心理账户，不改变总盈亏</span></div><div class="md">设发行价 P0、暗盘价 D、首日开盘价 O，中签 1 手。暗盘再捞 1 手、首日开盘卖 2 手，总盈亏 = 2O − P0 − D = (O − P0) + (O − D)。前半段是你原仓的盈亏（捞货前后<b>分毫不变</b>），后半段 (O − D) 才是捞货新增的那一笔交易。</div><div class="mw">所以「摊低成本」只让账面均价好看（(P0+D)/2），不提高总收益。真正让你少亏的是「熬到首日开盘卖」这个动作本身，不是加仓；而加仓等于把同一只股票的敞口翻倍——判断对了多赚一点，判断错了双倍亏。</div><div class="mf">捞货那笔 (首开 − 暗盘) 的实测：A+H + 温和破发 3/3 为正（+0.2 ~ +4.9pt）；非 A+H 组中位 −25.3pt。再扣掉一买一卖摩擦（约 0.25~0.30% + 固定约 30 港元），小额价差基本被吃光。</div></div><div class="myth"><div class="mt">「开盘前挂一个比开盘价低的价格，直接出」<span class="mv">这个动作不改变成交价</span></div><div class="md">港股首日开盘价由<b>开盘前竞价</b>统一撮合（同一时段所有成交同一个价）。你在竞价里挂卖单——哪怕挂得比预期开盘价低——成交价仍是<b>开盘价</b>，不会更低。所以这一步只等于「确保按开盘价卖出」。</div><div class="mw">但如果你是在<b>开盘后的连续交易时段</b>挂一个远离市价的低价单，那就会真的成交在更低的价格（更差）。所以要么把动作限制在开盘竞价阶段，要么开盘后直接按市价卖。</div><div class="mf">首日实测 60% 高开低走（收盘 − 开盘中位 −4.5pt），越晚卖越吃亏。</div></div>
+    <h3 style="font-size:15px;margin:20px 0 4px">五、现金打新 / 融资打新，分别怎么做</h3>
+    <div class="two">
+      <div class="colus"><h4>💰 现金打新</h4><ul><li>① 你的成本只有固定的认购手续费（约 49 HKD/笔）+ 中签费（6,328 HKD 的 1.0085%，约 64 HKD），<b>没有利息在跑</b>，所以不必为了省钱而着急卖。</li><li>② 中签 1 手（本金约 6,328 HKD）：一手就是一发子弹，<b>按上面七档动作整手执行</b>——别拆成碎单，暗盘流动性有限，拆碎了只会吃更差的价。</li><li>③ 中签多手：<b>按档位分批</b>。例：若暗盘落在 +50%~+100% 档 → 暗盘卖一半、余量留首日开盘早段；若落在 0%~+20% 档 → 一次性全走。</li><li>④ 现金户唯一需要注意的：<b>破发时必须走</b>。既然没有利息压力、没有时间成本，你都判断它弱，那留着只是把&#x27;已经确定的亏损&#x27;换成&#x27;更大的不确定亏损&#x27;。</li><li>⑤ 关于「暗盘低吸加仓摊成本」：<b>它不改变你原本那手的盈亏，只是新增一笔独立交易</b>（数学见下方误区③）。捞货那笔的价差 (首开−暗盘) 要扣掉一买一卖摩擦（约 0.25~0.30% + 固定约 30 港元）才有意义；小额价差基本被吃光，且加仓＝把同一只股敞口翻倍。破发时唯一值得考虑的豁免见下方判定框。</li><li>⑥ 别因为「就剩一天了」而拖延：首日实测 60% 高开低走（收盘比开盘再低 4.5pt），越晚卖越吃亏。</li></ul></div>
+      <div class="colus"><h4>🏦 融资打新（孖展）</h4><ul><li>① 融资（孖展）户的成本结构不同：认购手续费约 99 HKD/笔 + <b>利息按日计、不中签也要付</b> + 中签费（约 64 HKD，若中 1 手）。<b>每多持一天都在烧钱。</b></li><li>② 由此得出融资户的唯一原则：<b>提前一档执行</b>——比现金户更早、更多地落袋。例：现金户在 +50%~+100% 档是&#x27;卖一半留一半&#x27;，融资户应为&#x27;卖 7~8 成、只留 1~2 成博首日&#x27;。</li><li>③ 破发档（&lt; 0%）：<b>无条件立即清仓</b>。融资户没有『熬一熬』这个选项——利息+潜在首日下跌是双重损耗。</li><li>④ 融资买入暗盘股票<b>不能再抵押融资</b>（各券商规则），所以别指望『低吸再加杠杆』这条路。</li><li>⑤ 若中签多手且是融资：<b>先用暗盘了结还掉融资</b>，把利息链条断掉；只把确实想博的那部分（≤1/4）留在首日。</li></ul></div>
+    </div>
+    <h3 style="font-size:15px;margin:20px 0 4px">六、<span class="tip" data-tip="同一只股票，在不同时间卖结果差别很大。实测首日有 60% 是「高开低走」（收盘比开盘中位低 4.5pt），所以越晚卖越吃亏。">退出时点<i class="q">?</i></span>排序</h3>
+    <div class="exit-o"><div class="e"><div class="r">第 1 优先</div><div class="t">首日开盘早段（9:30–10:00）</div><div class="d">统计最优出场点：首日 60% 高开低走，收盘比开盘中位低 4.5pt</div></div><div class="e"><div class="r">第 2 优先</div><div class="t">暗盘（T-1 16:15–18:30）</div><div class="d">次优：T+0 可当日买卖，落袋即确定性</div></div><div class="e"><div class="r">第 3 优先</div><div class="t">首日收盘</div><div class="d">最差：多数回吐发生在盘中，等收盘等于把优势让掉</div></div></div>
+    <div class="note warn">⚠ <b>绿鞋的机制细节（与上方误区①配合看）：</b>稳价人只在<b>跌破发行价时</b>买入，
+    且<b>买入价不得高于发行价</b>（上市规则 9.23），规模 ≤ 发行量 15%、窗口 ≤ 上市日起 30 个日历日。
+    所以「第二天开盘卖给绿鞋赚一笔」在机制上不成立——托价上限就是发行价。另外本站因子库显示
+    <b>2026 年不少 A+H 股为「首日入通」主动放弃了绿鞋</b>，所以第一步永远是先确认这只到底有没有
+    （见上方 KPI 与<span class="tip" data-tip="绿鞋 = 「超额配股权」。承销商可以多卖约 15% 的股票；上市后 30 天内如果跌破发行价，稳价人可以买入托价。所以「有绿鞋 = 破发时下方有人接」。港股几乎人人都有，区分度低，只展示、不进打分。">绿鞋托价<i class="q">?</i></span>）。</div>
+    <div class="live"><b><span class="tip" data-tip="拿「最近已经真实上市的新股」，用和本次完全相同的算法、只喂给它上市之前的数据，回放一遍看准不准。这是防止「拿未来数据美化自己」的照妖镜，数字不好看也照实展示。">实况回测<i class="q">?</i></span>：最近 12 只已上市新股（2026-07-09 ~ 2026-09-22）</b>
+        —— 用与本报告<b>完全相同</b>的算法滚动回放：MAE <b>18.6pt</b>、中位偏差 -4.3pt、
+        方向命中 3/12、破发识别 2/9。
+        <table><tr><th>名称</th><th>上市日</th><th>超购</th><th>当时预测</th><th>实际暗盘</th><th>误差</th></tr><tr><td class="k">君正股份</td><td class="v">2026-08-25</td><td class="v">927×</td><td class="v pos">+21.0%</td><td class="v neg">-0.5%</td><td class="v neg">-21.5pt</td></tr><tr><td class="k">梅卡曼德机器人</td><td class="v">2026-09-01</td><td class="v">3835×</td><td class="v pos">+17.3%</td><td class="v neg">-0.7%</td><td class="v neg">-18.0pt</td></tr><tr><td class="k">希音－Ｗ</td><td class="v">2026-09-01</td><td class="v">6×</td><td class="v pos">+0.1%</td><td class="v neg">-13.3%</td><td class="v neg">-13.4pt</td></tr><tr><td class="k">麦科田</td><td class="v">2026-09-07</td><td class="v">436×</td><td class="v pos">+0.1%</td><td class="v neg">-22.8%</td><td class="v neg">-22.9pt</td></tr><tr><td class="k">江波龙</td><td class="v">2026-09-08</td><td class="v">40×</td><td class="v neg">-1.1%</td><td class="v neg">-0.7%</td><td class="v pos">+0.4pt</td></tr><tr><td class="k">优地机器人</td><td class="v">2026-09-09</td><td class="v">140×</td><td class="v neg">-1.7%</td><td class="v pos">+106.6%</td><td class="v pos">+108.4pt</td></tr><tr><td class="k">星环科技</td><td class="v">2026-09-21</td><td class="v">74×</td><td class="v neg">-0.7%</td><td class="v neg">-1.3%</td><td class="v neg">-0.6pt</td></tr><tr><td class="k">纳真科技</td><td class="v">2026-09-22</td><td class="v">35×</td><td class="v neg">-1.1%</td><td class="v pos">+9.0%</td><td class="v pos">+10.1pt</td></tr></table>
+        <div style="margin-top:7px;color:var(--mut)">⚠ 方向命中率不高是模型的真实局限：<b>它擅长给区间水平，不擅长猜单只涨跌方向</b>。
+        所以本报告的卖出动作全部按「暗盘实际落点」触发，而不是按预测方向触发。</div></div>
+    <div class="note">合规与成本提示：融资利息按日计（<b>不中签也要付</b>）；中签费 1.0085%（含经纪佣金/征费/交易费/财汇局费）；
+    暗盘由各券商独立撮合、<b>价格以你券商 App 为准</b>；港股通不能参与暗盘；
+    内地居民境外证券投资盈利按规定需自行申报（20% 个人所得税口径），请以最新法规为准。</div>
+    </section>
+
+<section><h2>S1 招股期 · 计算过程（速览）</h2>
+      <table><tr><th>步骤</th><th>增量</th><th>说明 / 理由</th></tr><tr><td class="k"><span class="tip" data-tip="有些公司同时在 A 股（内地）和港股上市。A 股现价比港股发行价贵得越多，说明港股这边相对「便宜」，上市后往 A 股靠拢的概率越大、通常越暖。做法是拿「A 股比发行价贵多少」乘一个系数（0.238）当预测起点。注意：折价深 ≠ 一定不破发，只是平均而言更暖。">A+H 溢价锚<i class="q">?</i></span></td><td class="v flat">—</td><td class="base">A 股较发行价溢价 -10.4% → 回归隐含中枢 -2.5%（斜率0.238、截断±12pt）；区间半宽 10.0pt <span class="info">→ [-5.0% ~ +7.5%]</span></td></tr><tr><td class="k"><span class="tip" data-tip="保荐人 = 帮公司上市的券商（投行）。看它过去保荐的新股首日表现好不好：战绩强的给一点小加分、差的扣一点。权重故意压得很小，因为这是统计规律、不是保证。">保荐人战绩<i class="q">?</i></span></td><td class="v neg">-0.2%</td><td class="delta">历史首日均值 +13.8% vs 基准 +15.2% → 偏离 -1.4% ×0.15=-0.2% <span class="info">→ [-5.2% ~ +7.3%]</span></td></tr><tr><td class="k"><span class="tip" data-tip="基石投资者 = 提前签约、承诺拿货并锁定一段时间（通常 6 个月）的大机构。它们认购的比例越高，说明专业机构越看好、上市后短期抛压也越小。做法是按「基石占比 减 市场平均 35%」来微调，权重保守。">基石配售<i class="q">?</i></span></td><td class="v pos">+1.6%</td><td class="delta">基石占比 48.4% vs 基准 35% → 偏离 13.4pt ×0.12=+1.6% <span class="info">→ [-3.6% ~ +8.9%]</span></td></tr></table>
+      <div class="note">看不懂某一行？把鼠标停在<b>步骤名</b>上，会用大白话解释这个因子是干什么的。</div></section>
+<section><h2>S2 中签后 · 计算过程（速览）</h2>
+      <table><tr><th>步骤</th><th>增量</th><th>说明 / 理由</th></tr><tr><td class="k"><span class="tip" data-tip="超购 = 认购量 ÷ 发行量。比如发行 1 亿股、大家认购了 20 亿股 = 超购 20 倍。超购越高说明抢的人越多、越难中签，上市后通常也越容易被炒高。我们把超购分成 7 档，直接看历史上「同样热度」的新股暗盘平均涨多少——这是整个模型最重要的一条参考。">超购分档中枢<i class="q">?</i></span></td><td class="v neg">-4.9%</td><td class="base">公开超购 3.78 倍 → 0–15倍（近12月 n=3）；该档暗盘中位 -4.9%、[P25,P75]=[-13.3%, -2.9%]</td></tr><tr><td class="k"><span class="tip" data-tip="在「超购热度」这条主线之外，再叠加保荐人、基石、国配、赛道、规模这些更细的特征：看它们在同一热度档里还能额外带来多少平均涨跌，再补上去。样本太少的档就不修，免得被噪声带偏。">残差分层修正<i class="q">?</i></span></td><td class="v pos">+10.0%</td><td class="delta">超购档之外的边际信息（保荐人/基石/国配/赛道/规模档位残差均值）合计 +10.0% → [sponsor:mid(9.86); corner:mid(-0.59); intl:pos(6.41); sector:pos(11.3); size:mid(2.32)]</td></tr><tr><td class="k"><span class="tip" data-tip="恒生指数当天涨还是跌。大盘好，所有新股的情绪一起水涨船高；大盘差则相反。按恒指涨跌幅乘一个小系数来微调。">大盘环境<i class="q">?</i></span></td><td class="v neg">-0.3%</td><td class="delta">恒指 -1.0% ×0.3 = -0.3%</td></tr></table>
+      <div class="note">看不懂某一行？把鼠标停在<b>步骤名</b>上，会用大白话解释这个因子是干什么的。</div></section>
+<section><h2>S3 暗盘后 · 计算过程（速览）</h2>
+      <table><tr><th>步骤</th><th>增量</th><th>说明 / 理由</th></tr><tr><td class="k"><span class="tip" data-tip="暗盘涨跌落在正常区间（−5% ~ +50%）内时，就以暗盘的实际表现为锚，不再额外调整。">常规情形<i class="q">?</i></span></td><td class="v flat">+0.0%</td><td class="delta">暗盘 ±50% 内 → 以暗盘为锚，±10%</td></tr><tr><td class="k"><span class="tip" data-tip="恒生指数前一晚（或当天）涨还是跌。大盘好，所有新股的情绪一起水涨船高；大盘差则相反。按恒指涨跌幅乘一个小系数来微调。">隔夜大盘<i class="q">?</i></span></td><td class="v neg">-0.4%</td><td class="delta">恒指 -1.0% ×0.4 = -0.4%</td></tr><tr><td class="k"><span class="tip" data-tip="国际配售 = 卖给机构的那部分。机构超购倍数高，说明机构也在抢，暗盘通常更暖。">国配修正<i class="q">?</i></span></td><td class="v pos">+2.0%</td><td class="delta">国配 9.46 倍 &gt;5 → +2%</td></tr><tr><td class="k"><span class="tip" data-tip="保荐人 = 帮公司上市的券商（投行）。看它过去保荐的新股首日表现好不好：战绩强的给一点小加分、差的扣一点。权重故意压得很小，因为这是统计规律、不是保证。">保荐人战绩(首日口径)<i class="q">?</i></span></td><td class="v neg">-0.3%</td><td class="delta">历史首日均值 +13.8% vs 基准 +15.2% → -0.3%</td></tr><tr><td class="k"><span class="tip" data-tip="基石投资者 = 提前签约、承诺拿货并锁定一段时间（通常 6 个月）的大机构。它们认购的比例越高，说明专业机构越看好、上市后短期抛压也越小。做法是按「基石占比 减 市场平均 35%」来微调，权重保守。">基石配售(首日口径)<i class="q">?</i></span></td><td class="v pos">+1.6%</td><td class="delta">基石占比 48.4% vs 35% → +1.6%</td></tr></table>
+      <div class="note">看不懂某一行？把鼠标停在<b>步骤名</b>上，会用大白话解释这个因子是干什么的。</div></section>
+<section><h2>S1 招股期 · 详细计算式</h2>
+      <div class="calcwrap"><div class="calc c-base">
+          <div class="cno">1</div>
+          <div class="cbody">
+            <div class="ck"><span class="tip" data-tip="有些公司同时在 A 股（内地）和港股上市。A 股现价比港股发行价贵得越多，说明港股这边相对「便宜」，上市后往 A 股靠拢的概率越大、通常越暖。做法是拿「A 股比发行价贵多少」乘一个系数（0.238）当预测起点。注意：折价深 ≠ 一定不破发，只是平均而言更暖。">A+H 溢价锚<i class="q">?</i></span><span class="ctag">基准</span></div>
+            <div class="cform"><span class="cform-l">计算式</span><code class="codetip" data-tip="有些公司同时在 A 股（内地）和港股上市。A 股现价比港股发行价贵得越多，说明港股这边相对「便宜」，上市后往 A 股靠拢的概率越大、通常越暖。做法是拿「A 股比发行价贵多少」乘一个系数（0.238）当预测起点。注意：折价深 ≠ 一定不破发，只是平均而言更暖。">中枢 = clamp(0.238 × -10.4%, ±12) = -2.5%</code></div>
+            <div class="cd">A 股较发行价溢价 -10.4% → 回归隐含中枢 -2.5%（斜率0.238、截断±12pt）；区间半宽 10.0pt</div>
+            <div class="clohi">→ 累计区间 [-5.0% ~ +7.5%]</div>
+          </div></div><div class="calc c-delta">
+          <div class="cno">2</div>
+          <div class="cbody">
+            <div class="ck"><span class="tip" data-tip="保荐人 = 帮公司上市的券商（投行）。看它过去保荐的新股首日表现好不好：战绩强的给一点小加分、差的扣一点。权重故意压得很小，因为这是统计规律、不是保证。">保荐人战绩<i class="q">?</i></span><span class="ctag">增量</span><span class="cv neg">-0.2%</span></div>
+            <div class="cform"><span class="cform-l">计算式</span><code class="codetip" data-tip="保荐人 = 帮公司上市的券商（投行）。看它过去保荐的新股首日表现好不好：战绩强的给一点小加分、差的扣一点。权重故意压得很小，因为这是统计规律、不是保证。">(13.85% − 15.21%) × 0.15 = -0.2% → clamp(±8) = -0.2%</code></div>
+            <div class="cd">历史首日均值 +13.8% vs 基准 +15.2% → 偏离 -1.4% ×0.15=-0.2%</div>
+            <div class="clohi">→ 累计区间 [-5.2% ~ +7.3%]</div>
+          </div></div><div class="calc c-delta">
+          <div class="cno">3</div>
+          <div class="cbody">
+            <div class="ck"><span class="tip" data-tip="基石投资者 = 提前签约、承诺拿货并锁定一段时间（通常 6 个月）的大机构。它们认购的比例越高，说明专业机构越看好、上市后短期抛压也越小。做法是按「基石占比 减 市场平均 35%」来微调，权重保守。">基石配售<i class="q">?</i></span><span class="ctag">增量</span><span class="cv pos">+1.61%</span></div>
+            <div class="cform"><span class="cform-l">计算式</span><code class="codetip" data-tip="基石投资者 = 提前签约、承诺拿货并锁定一段时间（通常 6 个月）的大机构。它们认购的比例越高，说明专业机构越看好、上市后短期抛压也越小。做法是按「基石占比 减 市场平均 35%」来微调，权重保守。">(48.4% − 35%) × 0.12 = 1.61% → clamp(±6) = 1.61%</code></div>
+            <div class="cd">基石占比 48.4% vs 基准 35% → 偏离 13.4pt ×0.12=+1.6%</div>
+            <div class="clohi">→ 累计区间 [-3.6% ~ +8.9%]</div>
+          </div></div></div>
+      <div class="note">每一行 = 一个因子/修正项的「输入 → 公式 → 代入 → 输出」。带「累计区间」的最后一行端点必须等于下方三阶段结论的区间。悬停<b>因子名或计算式</b>可看大白话解释。</div>
+    </section>
+<section><h2>S2 中签后 · 详细计算式（暗盘收盘）</h2>
+      <div class="calcwrap"><div class="calc c-base">
+          <div class="cno">1</div>
+          <div class="cbody">
+            <div class="ck"><span class="tip" data-tip="超购 = 认购量 ÷ 发行量。比如发行 1 亿股、大家认购了 20 亿股 = 超购 20 倍。超购越高说明抢的人越多、越难中签，上市后通常也越容易被炒高。我们把超购分成 7 档，直接看历史上「同样热度」的新股暗盘平均涨多少——这是整个模型最重要的一条参考。">超购分档中枢<i class="q">?</i></span><span class="ctag">基准</span><span class="cv neg">-4.9%</span></div>
+            <div class="cform"><span class="cform-l">计算式</span><code class="codetip" data-tip="超购 = 认购量 ÷ 发行量。比如发行 1 亿股、大家认购了 20 亿股 = 超购 20 倍。超购越高说明抢的人越多、越难中签，上市后通常也越容易被炒高。我们把超购分成 7 档，直接看历史上「同样热度」的新股暗盘平均涨多少——这是整个模型最重要的一条参考。">档位 = bucket(3.78) = 0–15倍；med = median(该档暗盘涨幅) = -4.9%；dLo=8.3, dHi=2.0</code></div>
+            <div class="cd">公开超购 3.78 倍 → 0–15倍（近12月 n=3）；该档暗盘中位 -4.9%、[P25,P75]=[-13.3%, -2.9%]</div>
+            
+          </div></div><div class="calc c-delta">
+          <div class="cno">2</div>
+          <div class="cbody">
+            <div class="ck"><span class="tip" data-tip="在「超购热度」这条主线之外，再叠加保荐人、基石、国配、赛道、规模这些更细的特征：看它们在同一热度档里还能额外带来多少平均涨跌，再补上去。样本太少的档就不修，免得被噪声带偏。">残差分层修正<i class="q">?</i></span><span class="ctag">增量</span><span class="cv pos">+10%</span></div>
+            <div class="cform"><span class="cform-l">计算式</span><code class="codetip" data-tip="在「超购热度」这条主线之外，再叠加保荐人、基石、国配、赛道、规模这些更细的特征：看它们在同一热度档里还能额外带来多少平均涨跌，再补上去。样本太少的档就不修，免得被噪声带偏。">各因子档位残差均值: sponsor[mid]=9.86% (n=41); corner[mid]=-0.59% (n=56); intl[pos]=6.41% (n=64); sector[pos]=11.3% (n=59); size[mid]=2.32% (n=30)；合计 corr = Σ = 10%</code></div>
+            <div class="cd">超购档之外的边际信息（保荐人/基石/国配/赛道/规模档位残差均值）合计 +10.0% → [sponsor:mid(9.86); corner:mid(-0.59); intl:pos(6.41); sector:pos(11.3); size:mid(2.32)]</div>
+            
+          </div></div><div class="calc c-delta">
+          <div class="cno">3</div>
+          <div class="cbody">
+            <div class="ck"><span class="tip" data-tip="恒生指数当天涨还是跌。大盘好，所有新股的情绪一起水涨船高；大盘差则相反。按恒指涨跌幅乘一个小系数来微调。">大盘环境<i class="q">?</i></span><span class="ctag">增量</span><span class="cv neg">-0.3%</span></div>
+            <div class="cform"><span class="cform-l">计算式</span><code class="codetip" data-tip="恒生指数当天涨还是跌。大盘好，所有新股的情绪一起水涨船高；大盘差则相反。按恒指涨跌幅乘一个小系数来微调。">-1.0% × 0.3 = -0.30%</code></div>
+            <div class="cd">恒指 -1.0% ×0.3 = -0.3%</div>
+            
+          </div></div></div>
+      <div class="note">每一行 = 一个因子/修正项的「输入 → 公式 → 代入 → 输出」。带「累计区间」的最后一行端点必须等于下方三阶段结论的区间。悬停<b>因子名或计算式</b>可看大白话解释。</div>
+    </section>
+<section><h2>S3 暗盘后 · 详细计算式（首日开盘）</h2>
+      <div class="calcwrap"><div class="calc c-delta">
+          <div class="cno">1</div>
+          <div class="cbody">
+            <div class="ck"><span class="tip" data-tip="暗盘涨跌落在正常区间（−5% ~ +50%）内时，就以暗盘的实际表现为锚，不再额外调整。">常规情形<i class="q">?</i></span><span class="ctag">增量</span><span class="cv flat">+0%</span></div>
+            <div class="cform"><span class="cform-l">计算式</span><code class="codetip" data-tip="暗盘涨跌落在正常区间（−5% ~ +50%）内时，就以暗盘的实际表现为锚，不再额外调整。">暗盘 -4.9% ∈ [−5, +50] → 以暗盘为锚（不调整）</code></div>
+            <div class="cd">暗盘 ±50% 内 → 以暗盘为锚，±10%</div>
+            
+          </div></div><div class="calc c-delta">
+          <div class="cno">2</div>
+          <div class="cbody">
+            <div class="ck"><span class="tip" data-tip="恒生指数前一晚（或当天）涨还是跌。大盘好，所有新股的情绪一起水涨船高；大盘差则相反。按恒指涨跌幅乘一个小系数来微调。">隔夜大盘<i class="q">?</i></span><span class="ctag">增量</span><span class="cv neg">-0.4%</span></div>
+            <div class="cform"><span class="cform-l">计算式</span><code class="codetip" data-tip="恒生指数前一晚（或当天）涨还是跌。大盘好，所有新股的情绪一起水涨船高；大盘差则相反。按恒指涨跌幅乘一个小系数来微调。">-1.0% × 0.4 = -0.40%</code></div>
+            <div class="cd">恒指 -1.0% ×0.4 = -0.4%</div>
+            
+          </div></div><div class="calc c-delta">
+          <div class="cno">3</div>
+          <div class="cbody">
+            <div class="ck"><span class="tip" data-tip="国际配售 = 卖给机构的那部分。机构超购倍数高，说明机构也在抢，暗盘通常更暖。">国配修正<i class="q">?</i></span><span class="ctag">增量</span><span class="cv pos">+2%</span></div>
+            <div class="cform"><span class="cform-l">计算式</span><code class="codetip" data-tip="国际配售 = 卖给机构的那部分。机构超购倍数高，说明机构也在抢，暗盘通常更暖。">国配 9.46 倍 &gt; 5 → +2%</code></div>
+            <div class="cd">国配 9.46 倍 &gt;5 → +2%</div>
+            
+          </div></div><div class="calc c-delta">
+          <div class="cno">4</div>
+          <div class="cbody">
+            <div class="ck"><span class="tip" data-tip="保荐人 = 帮公司上市的券商（投行）。看它过去保荐的新股首日表现好不好：战绩强的给一点小加分、差的扣一点。权重故意压得很小，因为这是统计规律、不是保证。">保荐人战绩(首日口径)<i class="q">?</i></span><span class="ctag">增量</span><span class="cv neg">-0.27%</span></div>
+            <div class="cform"><span class="cform-l">计算式</span><code class="codetip" data-tip="保荐人 = 帮公司上市的券商（投行）。看它过去保荐的新股首日表现好不好：战绩强的给一点小加分、差的扣一点。权重故意压得很小，因为这是统计规律、不是保证。">(13.85% − 15.21%) × 0.2 = -0.27% (clamp±10)</code></div>
+            <div class="cd">历史首日均值 +13.8% vs 基准 +15.2% → -0.3%</div>
+            
+          </div></div><div class="calc c-delta">
+          <div class="cno">5</div>
+          <div class="cbody">
+            <div class="ck"><span class="tip" data-tip="基石投资者 = 提前签约、承诺拿货并锁定一段时间（通常 6 个月）的大机构。它们认购的比例越高，说明专业机构越看好、上市后短期抛压也越小。做法是按「基石占比 减 市场平均 35%」来微调，权重保守。">基石配售(首日口径)<i class="q">?</i></span><span class="ctag">增量</span><span class="cv pos">+1.61%</span></div>
+            <div class="cform"><span class="cform-l">计算式</span><code class="codetip" data-tip="基石投资者 = 提前签约、承诺拿货并锁定一段时间（通常 6 个月）的大机构。它们认购的比例越高，说明专业机构越看好、上市后短期抛压也越小。做法是按「基石占比 减 市场平均 35%」来微调，权重保守。">(48.4% − 35%) × 0.12 = 1.61% (clamp±6)</code></div>
+            <div class="cd">基石占比 48.4% vs 35% → +1.6%</div>
+            
+          </div></div></div>
+      <div class="note">每一行 = 一个因子/修正项的「输入 → 公式 → 代入 → 输出」。带「累计区间」的最后一行端点必须等于下方三阶段结论的区间。悬停<b>因子名或计算式</b>可看大白话解释。</div>
+    </section>
+
+<section><h2>动态校准状态（市况 / 分层窗口 / FINI）</h2>
+<div class="kpis">
+  <div class="kpi"><div class="n">偏冷</div><div class="l">当前市况（近30天）</div></div>
+  <div class="kpi"><div class="n">-0.7%</div><div class="l">同窗口中位暗盘涨幅</div></div>
+  <div class="kpi"><div class="n">71.4%</div><div class="l">同窗口破发率</div></div>
+  <div class="kpi"><div class="n">+29.7%</div><div class="l">长期(12月)中位暗盘（对照）</div></div>
+  <div class="kpi"><div class="n">20.8%</div><div class="l">长期(12月)破发率（对照）</div></div>
+</div>
+<div class="note">校准样本量：<span class="tip" data-tip="港股打新的情绪一个月能翻脸——实测 2026 年 5 月暗盘中位 +75.6%，到 9 月已经是 −0.7%。所以不能只用一个固定的历史窗口：本引擎优先用「最近 3 个月」的样本算，某档样本不够就退到「近 6 个月」，再不够才用「近 12 个月」。这样市场一冷，预测立刻跟着降，不用等一整年才反应过来。">分层窗口<i class="q">?</i></span><b>近3月 29 只 → 近6月 73 只 → 近12月 106 只</b>（逐档取第一个够用的窗口）。保荐人实时库覆盖 20 位保荐人，基准 +15.2%。</div>
+<div class="note">逐月新股数（近12月窗口内）：2026-04:8、2026-05:13、2026-06:24、2026-07:14、2026-08:1、2026-09:7</div>
+<div class="note warn">⚠ 两点必须说明：<b>① FINI 口径</b>——2023 年底港交所 FINI 上线后申购资金仅冻结中签额，超购倍数系统性虚高；本引擎所有阈值均基于 FINI 后样本实时重算，不跨期混用。<b>② 为什么长期窗口对照很重要</b>——近 30 天破发率可能已到 70%，而 12 个月口径还显示「热市」，只看长期口径会严重低估风险；所以本报告的预测中枢走<b>近端优先</b>，长期数字只作对照展示。</div>
+</section>
+
+<section class="open"><h2>暗盘开盘价 · 情绪初判（辅输出）</h2>
+<div class="kpis"><div class="kpi"><div class="n">-3.4% ~ +6.6%</div><div class="l">开盘价初判区间(相对发行价)</div></div></div><div class="note">情绪初判（非模型输出）：暗盘开盘易被前几分钟大单砸偏，仅作方向参考；妖股开盘波动更大。</div>
+</section>
+
+<section><h2>因子方法总表（参与 / 展示 / 缺失）</h2>
+<div class="facgrid"><div class="fac"><div class="ft"><span class="tip" data-tip="超购 = 认购量 ÷ 发行量。比如发行 1 亿股、大家认购了 20 亿股 = 超购 20 倍。超购越高说明抢的人越多、越难中签，上市后通常也越容易被炒高。我们把超购分成 7 档，直接看历史上「同样热度」的新股暗盘平均涨多少——这是整个模型最重要的一条参考。">超购分档<i class="q">?</i></span><span class="chip c-use">已纳入</span></div><div class="fs">公开超购倍数分 7 档，取该档暗盘中位数为中枢、[P25,P75] 为不对称区间。S2 主导项。<br>来源：i668 API · 实时重算</div><div class="ff codetip" data-tip="超购 = 认购量 ÷ 发行量。比如发行 1 亿股、大家认购了 20 亿股 = 超购 20 倍。超购越高说明抢的人越多、越难中签，上市后通常也越容易被炒高。我们把超购分成 7 档，直接看历史上「同样热度」的新股暗盘平均涨多少——这是整个模型最重要的一条参考。">档位=bucket(公开超购)；中枢=median(该档暗盘涨幅)；区间=[med−dLo, med+dHi]，dLo/dHi=该档[P25,P75]半距（实时重算）</div></div><div class="fac"><div class="ft"><span class="tip" data-tip="港股打新的情绪一个月能翻脸——实测 2026 年 5 月暗盘中位 +75.6%，到 9 月已经是 −0.7%。所以不能只用一个固定的历史窗口：本引擎优先用「最近 3 个月」的样本算，某档样本不够就退到「近 6 个月」，再不够才用「近 12 个月」。这样市场一冷，预测立刻跟着降，不用等一整年才反应过来。">分层窗口(近端优先)<i class="q">?</i></span><span class="chip c-use">已纳入</span></div><div class="fs">每档逐层取样本：近3月(≥5只) → 近6月(≥3只) → 近12月(≥3只)。市场一转冷，预测立刻跟着降。<br>来源：i668 API · 每次重算</div><div class="ff codetip" data-tip="港股打新的情绪一个月能翻脸——实测 2026 年 5 月暗盘中位 +75.6%，到 9 月已经是 −0.7%。所以不能只用一个固定的历史窗口：本引擎优先用「最近 3 个月」的样本算，某档样本不够就退到「近 6 个月」，再不够才用「近 12 个月」。这样市场一冷，预测立刻跟着降，不用等一整年才反应过来。">tiers=[(近3月,5),(近6月,3),(近12月,3)]；逐档取第一个满足样本门槛的窗口。因果回测 MAE 46.6（固定6月窗52.7）</div></div><div class="fac"><div class="ft"><span class="tip" data-tip="有些公司同时在 A 股（内地）和港股上市。A 股现价比港股发行价贵得越多，说明港股这边相对「便宜」，上市后往 A 股靠拢的概率越大、通常越暖。做法是拿「A 股比发行价贵多少」乘一个系数（0.238）当预测起点。注意：折价深 ≠ 一定不破发，只是平均而言更暖。">A+H 折价锚<i class="q">?</i></span><span class="chip c-use">已纳入</span></div><div class="fs">A股较发行价溢价% × 回归斜率 0.238（截断±12pt）。S1/S2 统一口径（原两处不一致已合并）。<br>来源：腾讯行情 + 招股书</div><div class="ff codetip" data-tip="有些公司同时在 A 股（内地）和港股上市。A 股现价比港股发行价贵得越多，说明港股这边相对「便宜」，上市后往 A 股靠拢的概率越大、通常越暖。做法是拿「A 股比发行价贵多少」乘一个系数（0.238）当预测起点。注意：折价深 ≠ 一定不破发，只是平均而言更暖。">隐含中枢 = clamp(0.238 × A股溢价%, ±12pt)</div></div><div class="fac"><div class="ft"><span class="tip" data-tip="在「超购热度」这条主线之外，再叠加保荐人、基石、国配、赛道、规模这些更细的特征：看它们在同一热度档里还能额外带来多少平均涨跌，再补上去。样本太少的档就不修，免得被噪声带偏。">残差分层修正<i class="q">?</i></span><span class="chip c-use">已纳入</span></div><div class="fs">超购档之外的边际信息：保荐人/基石/国配/赛道/规模 的档位残差均值。替代原「6因子全砍」。<br>来源：样本残差回归 · 实时</div><div class="ff codetip" data-tip="在「超购热度」这条主线之外，再叠加保荐人、基石、国配、赛道、规模这些更细的特征：看它们在同一热度档里还能额外带来多少平均涨跌，再补上去。样本太少的档就不修，免得被噪声带偏。">corr = Σ 各因子档位(样本≥5)的(dk−桶中位)残差均值，clamp(±10pt)</div></div><div class="fac"><div class="ft"><span class="tip" data-tip="先看最近 12 个月整体市场是冷是热：破发率很高、新股普遍跌就是「冷市」，就把所有预测整体下调；反之「热市」上调。相当于给预测装了一个温度计。">情绪周期(已改口径)<i class="q">?</i></span><span class="chip c-use">已纳入</span></div><div class="fs">不再用「冷市−8/热市+3」的固定平移（因果回测证明是负贡献）。情绪改由<b>分层窗口自动吸收</b> + 近30/90天指标如实展示。<br>来源：滚动窗口 · 实时</div><div class="ff codetip" data-tip="先看最近 12 个月整体市场是冷是热：破发率很高、新股普遍跌就是「冷市」，就把所有预测整体下调；反之「热市」上调。相当于给预测装了一个温度计。">固定平移已删除（实测 MAE 40.05→39.4、中位偏差 −8.4→−5.4）；市况标签取近30天(≥3只)，与展示数字同窗口</div></div><div class="fac"><div class="ft"><span class="tip" data-tip="恒生指数当天涨还是跌。大盘好，所有新股的情绪一起水涨船高；大盘差则相反。按恒指涨跌幅乘一个小系数来微调。">大盘环境<i class="q">?</i></span><span class="chip c-use">已纳入</span></div><div class="fs">恒指涨跌幅 ×0.3（S2）/ ×0.4（S3）。实时修正项。<br>来源：腾讯恒指 · 实时</div><div class="ff codetip" data-tip="恒生指数当天涨还是跌。大盘好，所有新股的情绪一起水涨船高；大盘差则相反。按恒指涨跌幅乘一个小系数来微调。">S2: 中枢 += 恒指%×0.3；S3: 中枢 += 恒指%×0.4</div></div><div class="fac"><div class="ft"><span class="tip" data-tip="超购 = 认购量 ÷ 发行量。比如发行 1 亿股、大家认购了 20 亿股 = 超购 20 倍。超购越高说明抢的人越多、越难中签，上市后通常也越容易被炒高。我们把超购分成 7 档，直接看历史上「同样热度」的新股暗盘平均涨多少——这是整个模型最重要的一条参考。">国配超购<i class="q">?</i></span><span class="chip c-use">已纳入</span></div><div class="fs">国际配售 &gt;5倍 +2%（S3参与；S2以残差分层间接计入）。<br>来源：i668 API</div><div class="ff codetip" data-tip="超购 = 认购量 ÷ 发行量。比如发行 1 亿股、大家认购了 20 亿股 = 超购 20 倍。超购越高说明抢的人越多、越难中签，上市后通常也越容易被炒高。我们把超购分成 7 档，直接看历史上「同样热度」的新股暗盘平均涨多少——这是整个模型最重要的一条参考。">国配&gt;5倍 → +2pt（S3直接；S2经残差分层间接）</div></div><div class="fac"><div class="ft"><span class="tip" data-tip="发行的盘子大小。小盘股筹码少、容易被炒、波动大；大盘股相对稳。所以小额度稍加分、大额度稍减分。">发行规模<i class="q">?</i></span><span class="chip c-use">已纳入</span></div><div class="fs">募资额分档（&lt;30亿 / 30–300亿 / &gt;300亿），按档位残差均值修正（残差分层间接计入）。<br>来源：招股书</div><div class="ff codetip" data-tip="发行的盘子大小。小盘股筹码少、容易被炒、波动大；大盘股相对稳。所以小额度稍加分、大额度稍减分。">档位：&lt;30亿(小) / 30–300亿(中) / &gt;300亿(大)；Δ = 该档样本(dk−桶中位)残差均值，并入 corr 合计 clamp ±10pt</div></div><div class="fac"><div class="ft"><span class="tip" data-tip="保荐人 = 帮公司上市的券商（投行）。看它过去保荐的新股首日表现好不好：战绩强的给一点小加分、差的扣一点。权重故意压得很小，因为这是统计规律、不是保证。">保荐人战绩<i class="q">?</i></span><span class="chip c-use">已纳入</span></div><div class="fs">(历史首日表现−市场基准)×权重：S1 用 0.15±8、S3 用 0.20±10；S2 经残差分层间接计入。基准与战绩均为<b>运行时中位数口径</b>。<br>来源：站点首日收盘 · 实时重算</div><div class="ff codetip" data-tip="保荐人 = 帮公司上市的券商（投行）。看它过去保荐的新股首日表现好不好：战绩强的给一点小加分、差的扣一点。权重故意压得很小，因为这是统计规律、不是保证。">Δ = (保荐人首日收盘涨幅中位数 − 全库中位基准) × 权重；S1 0.15/clamp±8，S3 0.20/clamp±10</div></div><div class="fac"><div class="ft"><span class="tip" data-tip="基石投资者 = 提前签约、承诺拿货并锁定一段时间（通常 6 个月）的大机构。它们认购的比例越高，说明专业机构越看好、上市后短期抛压也越小。做法是按「基石占比 减 市场平均 35%」来微调，权重保守。">基石配售<i class="q">?</i></span><span class="chip c-use">已纳入</span></div><div class="fs">基石认购÷全球发售 = 占比，vs 基准35% ×0.12（±6pt）。招股章程PDF。<br>来源：港交所披露易 · 内置库</div><div class="ff codetip" data-tip="基石投资者 = 提前签约、承诺拿货并锁定一段时间（通常 6 个月）的大机构。它们认购的比例越高，说明专业机构越看好、上市后短期抛压也越小。做法是按「基石占比 减 市场平均 35%」来微调，权重保守。">Δ = (基石占比 − 35%) × 0.12，clamp(±6pt)</div></div><div class="fac"><div class="ft"><span class="tip" data-tip="有些新股暗盘会暴涨（俗称「妖股」）。对这类股，用历史数据找出「首日开盘 ÷ 暗盘收盘」的比例关系，来推算首日开盘大概是多少。">妖股标定系数<i class="q">?</i></span><span class="chip c-use">已纳入</span></div><div class="fs">S3：暗盘&gt;50% 时 首日开盘/暗盘收盘 的样本中位比（原0.7裸常数已标定）。<br>来源：样本实测 · 实时</div><div class="ff codetip" data-tip="有些新股暗盘会暴涨（俗称「妖股」）。对这类股，用历史数据找出「首日开盘 ÷ 暗盘收盘」的比例关系，来推算首日开盘大概是多少。">S3: 暗盘&gt;50% → 首日开盘 ≈ 暗盘 × ratio(样本中位比≈1.01，原0.7已证伪)</div></div><div class="fac"><div class="ft"><span class="tip" data-tip="绿鞋 = 「超额配股权」。承销商可以多卖约 15% 的股票；上市后 30 天内如果跌破发行价，稳价人可以买入托价。所以「有绿鞋 = 破发时下方有人接」。港股几乎人人都有，区分度低，只展示、不进打分。">超额配股权(绿鞋)<i class="q">?</i></span><span class="chip c-show">只展示</span></div><div class="fs">承销商可超额配售约15%，上市后30天破发可由稳价人托价（买入价≤发行价）。区分度低→只展示不入权重。<br>来源：招股章程PDF</div><div class="ff codetip" data-tip="绿鞋 = 「超额配股权」。承销商可以多卖约 15% 的股票；上市后 30 天内如果跌破发行价，稳价人可以买入托价。所以「有绿鞋 = 破发时下方有人接」。港股几乎人人都有，区分度低，只展示、不进打分。">机制项：超额配售权≈15%，破发时稳价人可托价（托价上限=发行价），不量化入权重</div></div><div class="fac"><div class="ft"><span class="tip" data-tip="公开发售和国际配售各占多少、有没有回拨机制。它会明显影响中签率和货源集中度，但很难折算成一个分数，所以只展示、不加权。">发售结构<i class="q">?</i></span><span class="chip c-show">只展示</span></div><div class="fs">公开占比/回拨/基石名单。机制影响中签率与筹码，难量化单分→只展示。<br>来源：招股章程PDF</div><div class="ff codetip" data-tip="公开发售和国际配售各占多少、有没有回拨机制。它会明显影响中签率和货源集中度，但很难折算成一个分数，所以只展示、不加权。">机制项：公开占比/回拨比例/基石名单（不量化入权重）</div></div><div class="fac"><div class="ft"><span class="tip" data-tip="散户的中签比例。它和超购其实是同一件事的两面（超购越高、越难中），信息重复，单独加入反而添乱，所以只展示、不加权。它影响的是「你能拿到多少货」，不是「暗盘会涨多少」。">散户中签率<i class="q">?</i></span><span class="chip c-show">只展示</span></div><div class="fs">与超购高度共线（r=−0.72），单独解释力弱→只展示不加权。人数口径。<br>来源：i668 API</div><div class="ff codetip" data-tip="散户的中签比例。它和超购其实是同一件事的两面（超购越高、越难中），信息重复，单独加入反而添乱，所以只展示、不加权。它影响的是「你能拿到多少货」，不是「暗盘会涨多少」。">展示项：与超购 r=−0.72 共线，不单独加权</div></div><div class="fac"><div class="ft"><span class="tip" data-tip="国际配售里到底是「谁」买了——比如多少是长线基金、多少是对冲基金。这个数据只有付费数据商有，所有免费渠道都拿不到。所以模型里没有它；如果你自己知道内情，可以用报告里的「改价」把它补进去。">国配明细(长线占比)<i class="q">?</i></span><span class="chip c-miss">拿不到</span></div><div class="fs">付费数据商内容，免费源不披露国际配售认购人结构。<br>来源：—</div><div class="ff codetip" data-tip="国际配售里到底是「谁」买了——比如多少是长线基金、多少是对冲基金。这个数据只有付费数据商有，所有免费渠道都拿不到。所以模型里没有它；如果你自己知道内情，可以用报告里的「改价」把它补进去。">数据缺失：付费源，免费不披露 → 不参与</div></div><div class="fac"><div class="ft"><span class="tip" data-tip="暗盘 = 新股正式上市前一天的「场外预演交易」，时间通常是上市前一日 16:15–18:30。不通过交易所，由各家券商自己撮合，所以不同券商报的价可能不一样。它能买卖、T+0 当天可进出，是打新人最先能脱手的地方；港股通不能参与，也不是每只新股都有暗盘。">暗盘分时/最高/最低/成交量<i class="q">?</i></span><span class="chip c-miss">拿不到</span></div><div class="fs">站点未提供暗盘盘口数据 → 「高开低走 / 低开高走」无法用数据预测，只能给执行纪律。<br>来源：—</div><div class="ff codetip" data-tip="暗盘 = 新股正式上市前一天的「场外预演交易」，时间通常是上市前一日 16:15–18:30。不通过交易所，由各家券商自己撮合，所以不同券商报的价可能不一样。它能买卖、T+0 当天可进出，是打新人最先能脱手的地方；港股通不能参与，也不是每只新股都有暗盘。">数据缺失：无暗盘分时数据 → 形态判断只能靠人工看盘</div></div><div class="fac"><div class="ft"><span class="tip" data-tip="开盘价在招股 / 暗盘阶段还没发生，逻辑上不可能存在；已上市的股票我们会用 etnet 补齐首日开盘价。所以未上市股不预测开盘价，绝不假装能算。">未上市开盘价<i class="q">?</i></span><span class="chip c-miss">拿不到</span></div><div class="fs">尚未发生，不可能存在；已上市股首日开盘由 etnet 补齐。<br>来源：—</div><div class="ff codetip" data-tip="开盘价在招股 / 暗盘阶段还没发生，逻辑上不可能存在；已上市的股票我们会用 etnet 补齐首日开盘价。所以未上市股不预测开盘价，绝不假装能算。">数据缺失：未发生，不可能存在</div></div></div>
+</section>
+
+<footer>
+<div>⚠ 免责：本预测是基于历史统计的条件分布推断，<b>不是荐股、不保收益、不是精确报价器</b>。模型只承诺「方向+区间」，点位级预测是伪命题。<b>处置单给出的是执行纪律（按暗盘实际落点触发），不是收益承诺。</b></div>
+<div>实时性：每次运行均实时重抓配售结果 + 恒指/A股行情，并在<b>分层窗口（近3月→6月→12月，近端优先）</b>上重算分桶与保荐人战绩，故不同时段问会得到刷新后的评估。本页所有数字均为运行时实时计算，无写死常量。</div>
+<div>诚实边界：本站无暗盘分时/最高/最低/成交量数据，<b>无法预测「高开低走还是低开高走」</b>；实况回测显示模型的方向命中率不高（不擅长猜单只涨跌方向），故动作全部按实际落点触发。</div>
+<div>改造痕迹：静态桶→分层实时重算 ｜ 固定冷热平移→删除（因果回测证伪） ｜ S2 残差分层修正 ｜ S3 妖股系数标定 ｜ 保荐人改中位数口径 ｜ 剔除 openPct 缺失污染 ｜ 新增持仓处置单。</div>
+</footer>
+</div>
+<script>
+/* 悬停气泡自适应定位：保证靠右/靠下的元素，气泡也完整可见（不被屏幕边缘截断）。
+   纯本地、无外链、无数据上报。 */
+(function(){
+  var tipW = function(){ return Math.min(330, window.innerWidth * 0.76); };
+  function place(el){
+    var r = el.getBoundingClientRect(), w = tipW() + 20;
+    var left = Math.min(Math.max(4, r.left), Math.max(4, window.innerWidth - w));
+    el.style.setProperty('--tipx', (left - r.left) + 'px');
+    el.classList.toggle('flip', r.bottom + 260 > window.innerHeight && r.top > 280);
+  }
+  document.addEventListener('mouseover', function(e){
+    var el = e.target && e.target.closest ? e.target.closest('.tip,.codetip') : null;
+    if (el) place(el);
+  }, true);
+  document.addEventListener('focusin', function(e){
+    var el = e.target && e.target.closest ? e.target.closest('.tip,.codetip') : null;
+    if (el) place(el);
+  });
+})();
+</script>
+</body></html>
