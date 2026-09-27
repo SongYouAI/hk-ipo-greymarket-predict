@@ -17,3 +17,6 @@ venv/
 
 # 本地输出（保留 reports/ 下的样例报告）
 /reports/local-*.html
+
+# 运行缓存（i668 接口限流防护，不入库）
+.cache/

@@ -21,13 +21,27 @@
 
 纯标准库，无第三方依赖。联网取数失败时明确报错，不编造。
 """
-import sys, os, json, re, math, time, hmac, hashlib, urllib.request, urllib.parse, statistics, datetime, argparse
+import sys, os, json, re, math, time, hmac, hashlib, urllib.request, urllib.error, urllib.parse, statistics, datetime, argparse
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 EXTRAS_PATH = os.path.join(HERE, "extras.json")
 SECRET = "6680fc61c8585cfca143366eea267b67617b7c2830c1c896cd952b276db117c9"
 FX_CNY2HKD = 1.09
-WINDOW_MONTHS = 12
+WINDOW_MONTHS = 12           # 长期回退窗口
+WINDOW_MONTHS_NEAR = 3       # 近端主窗口（分层首选）
+WINDOW_MONTHS_RECENT = 6     # 次选窗口
+WINDOW_DAYS_RECENT = 30      # 「当下市况」观察窗（情绪仪表盘用）
+# 分层窗口（近端优先）的因果回测依据（n=66，只用该股上市前数据）：
+#   固定 6 月窗口        MAE 52.66 / 最近12只 21.33 / 覆盖 56/66
+#   近3月(>=5)→6月(>=3)→12月(>=3)  MAE 46.56 / 最近12只 18.49 / 覆盖 63/66  ← 采用
+# 即「缩短窗口自动吸收情绪 + 不足时逐档回退」，优于加任何情绪动量/偏差校正项（后者实测更差）。
+
+# 交易成本（HKD，2026 常见券商口径；仅用于处置方案的"打平线"估算，实际以你券商为准）
+FEE_STAMP = 0.001        # 印花税 0.1%（买卖各收）
+FEE_COMM = 0.0005        # 佣金 ~0.03%~0.06%，取 0.05%
+FEE_PLATFORM = 15.0      # 平台费（富途暗盘 15 HKD/笔）
+FEE_SETTLE = 0.000042    # 中央结算费
+FEE_ALLOT = 0.010085     # 中签费 1.0085%（经纪佣金+证监会征费+交易费+财务汇报局费）
 
 # ---------------------------------------------------------------------------
 # 工具
@@ -53,7 +67,29 @@ def stars(c):
 # ---------------------------------------------------------------------------
 # 数据获取（i668 API + 腾讯行情）
 # ---------------------------------------------------------------------------
-def api_get(path, params=None):
+CACHE_DIR = os.path.join(HERE, "..", ".cache")
+CACHE_TTL = int(os.environ.get("HKIPO_CACHE_TTL", "300"))   # 秒；0 = 禁用缓存
+
+def _cache_path(path, params):
+    key = path + "|" + json.dumps(params or {}, sort_keys=True)
+    return os.path.join(CACHE_DIR, hashlib.sha256(key.encode()).hexdigest()[:20] + ".json")
+
+def api_get(path, params=None, retries=4, use_cache=True):
+    """带**重试退避 + 短 TTL 缓存**的接口调用。
+
+    为什么必须做：实测连续调用会触发站点 `HTTP 429 Too Many Requests`
+    （批量跑 30 只时 11 只被拒）。缓存 TTL 默认 300 秒——既避免自己把自己限流，
+    又保证「最新数据」的语义（5 分钟内的市况不会变），可用环境变量 HKIPO_CACHE_TTL 调整，0=禁用。
+    """
+    cp = _cache_path(path, params)
+    if use_cache and CACHE_TTL > 0:
+        try:
+            with open(cp, encoding="utf-8") as f:
+                c = json.load(f)
+            if time.time() - c.get("t", 0) < CACHE_TTL:
+                return c["d"]
+        except Exception:
+            pass
     base = "/api"
     url = "https://www.i668.vip" + base + path
     a = ""
@@ -61,14 +97,39 @@ def api_get(path, params=None):
         a = "&".join(f"{k}={urllib.parse.quote(str(v))}" for k, v in params.items())
         url = url + "?" + a
     i = base + path
-    t = str(int(time.time()))
-    msg = t + i + a + "" + SECRET
-    sig = hmac.new(SECRET.encode(), msg.encode(), hashlib.sha256).hexdigest()
-    req = urllib.request.Request(url, headers={
-        "X-Timestamp": t, "X-Sign": sig,
-        "Referer": "https://www.i668.vip/", "Origin": "https://www.i668.vip/"})
-    with urllib.request.urlopen(req, timeout=25) as r:
-        return json.loads(r.read().decode())
+    last = None
+    for attempt in range(retries):
+        t = str(int(time.time()))
+        msg = t + i + a + "" + SECRET
+        sig = hmac.new(SECRET.encode(), msg.encode(), hashlib.sha256).hexdigest()
+        req = urllib.request.Request(url, headers={
+            "X-Timestamp": t, "X-Sign": sig,
+            "Referer": "https://www.i668.vip/", "Origin": "https://www.i668.vip/"})
+        try:
+            with urllib.request.urlopen(req, timeout=25) as r:
+                d = json.loads(r.read().decode())
+            if use_cache and CACHE_TTL > 0:
+                try:
+                    os.makedirs(CACHE_DIR, exist_ok=True)
+                    with open(cp, "w", encoding="utf-8") as f:
+                        json.dump({"t": time.time(), "d": d}, f, ensure_ascii=False)
+                except Exception:
+                    pass
+            return d
+        except urllib.error.HTTPError as e:
+            last = e
+            if e.code == 429 or 500 <= e.code < 600:
+                # 退避：2s → 4s → 8s（并在末次前多给一点）
+                wait = 2 ** (attempt + 1)
+                sys.stderr.write(f"[warn] 接口返回 {e.code}，{wait}s 后重试（第 {attempt+1}/{retries} 次）\n")
+                time.sleep(wait)
+                continue
+            raise
+        except Exception as e:
+            last = e
+            time.sleep(1.5 * (attempt + 1))
+    raise SystemExit(f"i668 接口调用失败（已重试 {retries} 次）：{last}\n"
+                     f"提示：这是站点限流或网络问题，稍等 1~2 分钟再试即可；本引擎每次都会实时取数，不缓存过期数据（当前 TTL {CACHE_TTL}s）。")
 
 def to_gtimg_code(code):
     code = str(code)
@@ -111,10 +172,39 @@ def load_extras():
     with open(EXTRAS_PATH, encoding="utf-8") as f:
         return json.load(f)
 
-def sponsor_stats(extras, code):
+def build_sponsor_book(stocks, extras):
+    """用**站点实时数据**重建「保荐人 → 首日收盘涨幅中位数」（每次运行都重算，永远最新）。
+
+    为什么不再沿用内置 extras['sponsors'].avg：
+      ① 口径不一致——全套模型其他环节（分桶中枢、情绪）都用中位数对抗右偏，唯独保荐人用均值；
+      ② 实测：全样本首日开盘中位 37.4%，而内置「均值×n 加权」基准 = 50.7%（被妖股右尾抬高 13.3pt）；
+         后果是 117 只里 68 只（58%）的保荐人项被误判为扣分。
+    改用站点 first_day_close_price（覆盖 110/117）实时重算，门槛 n>=3。
+    """
+    per = {}
+    for s in stocks:
+        fdc = num(s.get("first_day_close_price")); ipo = num(s.get("ipo_price"))
+        if fdc is None or not ipo or ipo <= 0: continue
+        v = (fdc / ipo - 1) * 100
+        for nm in (extras.get("stocks", {}).get(s.get("stock_code"), {}).get("sp") or []):
+            per.setdefault(nm, []).append(v)
+    allv = [v for vs in per.values() for v in vs]
+    base = statistics.median(allv) if len(allv) >= 20 else None
+    book = {nm: {"n": len(vs), "med": statistics.median(vs)} for nm, vs in per.items() if len(vs) >= 3}
+    return {"book": book, "base": base, "covered": len(book), "all_n": len(allv)}
+
+def sponsor_stats(extras, code, book=None):
+    """该股保荐人的加权战绩（优先运行时中位数口径，缺失时回退内置均值口径）。"""
     st = extras.get("stocks", {}).get(code, {})
     sp = st.get("sp")
     if not sp: return None
+    if book and book.get("base") is not None:
+        picked = [(nm, book["book"][nm]["n"], book["book"][nm]["med"]) for nm in sp if nm in book["book"]]
+        if picked:
+            sw = sn = 0.0
+            for nm, n, med in picked:
+                sw += med * n; sn += n
+            return {"avg": sw / sn, "n": int(sn), "names": picked, "src": "运行时中位数口径"}
     sw = sn = 0.0
     picked = []
     for nm in sp:
@@ -123,9 +213,10 @@ def sponsor_stats(extras, code):
         picked.append((nm, s["n"], s["avg"]))
         sw += s["avg"] * s["n"]; sn += s["n"]
     if not sn: return None
-    return {"avg": sw / sn, "n": int(sn), "names": picked}
+    return {"avg": sw / sn, "n": int(sn), "names": picked, "src": "内置均值口径(旧)"}
 
-def sponsor_baseline(extras):
+def sponsor_baseline(extras, book=None):
+    if book and book.get("base") is not None: return book["base"]
     sw = sn = 0.0
     for s in extras.get("sponsors", {}).values():
         if not s.get("n"): continue
@@ -145,10 +236,15 @@ def cornerstone_of(extras, code, stock):
             "stabilizer": p.get("stabilizer")}
 
 def first_day_open(extras, code):
+    """首日开盘涨幅%（来自内置因子库）。
+    ⚠ 数据纪律：`openPct == 0` 是**抓取缺失值**而非真实平开——
+    实测抽查 14 只中 12 只首日收盘明显 ≠ 发行价（星环科技 −27%、华健未来 −56.9%），
+    而 94 只正常样本里「恰好平开」只有 3 只。故一律按缺失处理（返回 None），
+    否则会把「破发后熬首日更优」的胜率从 42% 假造成 70%。"""
     st = extras.get("stocks", {}).get(code, {})
-    if st.get("openPct") is not None:
-        return float(st["openPct"])
-    return None
+    v = num(st.get("openPct"))
+    if v is None or v == 0: return None
+    return v
 
 # ---------------------------------------------------------------------------
 # 赛道推断（名称关键词；诚实标注"名称推断"）
@@ -181,10 +277,13 @@ def parse_date(s):
     except Exception:
         return None
 
-def build_sample(stocks):
-    """可校准样本：有超购 + 有暗盘实测 + 在最近 WINDOW_MONTHS 内上市。"""
-    today = datetime.date.today()
-    cut = today - datetime.timedelta(days=WINDOW_MONTHS * 31)
+def build_sample(stocks, months=WINDOW_MONTHS, today=None):
+    """可校准样本：**只取已发生暗盘实测**的股票（有超购 + 有暗盘涨幅 + 在窗口内上市）。
+
+    铁律：绝不用「还没暗盘、还没上市」的股票做校准——它们的 dk 为空，天然被排除。
+    """
+    today = today or datetime.date.today()
+    cut = today - datetime.timedelta(days=int(months * 30.5))
     rows = []
     for s in stocks:
         over = num(s.get("public_offer_subscription_multiple"))
@@ -210,49 +309,137 @@ def bucket_index(over):
             return i
     return len(BUCKET_EDGES) - 2
 
-def compute_buckets(sample):
+def _bucket_stat(vals):
+    if len(vals) >= 2:
+        med = statistics.median(vals)
+        p25 = statistics.quantiles(vals, n=4)[0]
+        p75 = statistics.quantiles(vals, n=4)[2]
+        return med, med - p25, p75 - med
+    if len(vals) == 1:
+        return vals[0], 0.0, 0.0
+    return None, None, None
+
+def compute_buckets(sample=None, fallback=None, tiers=None):
+    """分桶统计，支持**分层窗口（近端优先）**。
+
+    `tiers` = [(样本行, 该层最低样本数, 层名), ...] 按优先级排列：
+      · 逐档（超购档）取第一个「样本数 >= 该层门槛」的窗口 → 自动做到「大档吃近端、小档退长期」；
+      · 这样既让近 3 个月的情绪立刻反映到中枢，又不至于让小样本档位变成噪声。
+    未传 tiers 时退化为旧的「主窗 + 单一 fallback」行为。
+    """
+    if tiers:
+        buckets = []
+        for i in range(len(BUCKET_EDGES) - 1):
+            chosen = None
+            for rows, min_n, label in tiers:
+                vals = [r["dk"] for r in rows if bucket_index(r["over"]) == i]
+                if len(vals) >= min_n:
+                    med, dLo, dHi = _bucket_stat(vals)
+                    chosen = {"label": BUCKET_LABELS[i], "n": len(vals), "med": med,
+                              "dLo": dLo, "dHi": dHi, "src": label}
+                    break
+            if chosen is None:      # 连最宽窗口都凑不够门槛 → 有多少用多少，并标注
+                rows = tiers[-1][0]
+                vals = [r["dk"] for r in rows if bucket_index(r["over"]) == i]
+                med, dLo, dHi = _bucket_stat(vals)
+                chosen = {"label": BUCKET_LABELS[i], "n": len(vals), "med": med,
+                          "dLo": dLo, "dHi": dHi,
+                          "src": (tiers[-1][2] + "（样本偏少）") if vals else "无样本"}
+            buckets.append(chosen)
+        return buckets
+    fb = fallback or []
+    sample = sample or []
     buckets = []
     for i in range(len(BUCKET_EDGES) - 1):
         vals = [r["dk"] for r in sample if bucket_index(r["over"]) == i]
-        if len(vals) >= 2:
-            med = statistics.median(vals)
-            p25 = statistics.quantiles(vals, n=4)[0]
-            p75 = statistics.quantiles(vals, n=4)[2]
-            dLo = med - p25
-            dHi = p75 - med
-        elif len(vals) == 1:
-            med = vals[0]; dLo = dHi = 0.0
-        else:
-            med = dLo = dHi = None
-        buckets.append({"label": BUCKET_LABELS[i], "n": len(vals),
-                        "med": med, "dLo": dLo, "dHi": dHi})
+        med, dLo, dHi = _bucket_stat(vals)
+        n, src = len(vals), "主窗"
+        if med is None and fb:
+            fvals = [r["dk"] for r in fb if bucket_index(r["over"]) == i]
+            med, dLo, dHi = _bucket_stat(fvals)
+            n, src = len(fvals), "长期回退"
+        buckets.append({"label": BUCKET_LABELS[i], "n": n, "med": med, "dLo": dLo,
+                        "dHi": dHi, "src": src})
     return buckets
 
 # ---------------------------------------------------------------------------
 # 动态校准：情绪周期 / 冷热市（改造 G）
 # ---------------------------------------------------------------------------
-def compute_regime(sample):
+def sentiment_windows(stocks, today=None):
+    """情绪仪表盘：近 30 / 90 天与全窗口的**已上市**新股实况（只统计已有暗盘实测者）。
+
+    为什么一定要看「近 30 天」：暗盘情绪月间波动极大——实测逐月中位从 +75.6%（2026-05）
+    到 −0.7%（2026-09），跨度超过 76pt。用 12 个月窗口判定"热市/冷市"会严重滞后。
+    """
+    today = today or datetime.date.today()
+    out = {}
+    for key, days in (("d30", 30), ("d90", 90), ("all", None)):
+        vals = []
+        for s in stocks:
+            dk = num(s.get("dark_pool_change_pct"))
+            ls = parse_date(s.get("listing_date"))
+            if dk is None or ls is None: continue
+            if days is not None and ls < today - datetime.timedelta(days=days): continue
+            vals.append(dk)
+        out[key] = {
+            "n": len(vals),
+            "med": round(statistics.median(vals), 1) if vals else None,
+            "brk": round(sum(1 for x in vals if x < 0) / len(vals) * 100, 1) if vals else None,
+            "up": round(sum(1 for x in vals if x > 0) / len(vals) * 100, 1) if vals else None,
+        }
+    return out
+
+def compute_regime(sample, sent=None):
+    """情绪周期快照。
+
+    ⚠ 重要变更（2026-09-27，严格因果回测驱动）：**取消「固定冷热平移」**。
+    实测（n=46，只用该股上市前的数据建桶）：加固定平移 MAE 40.05、中位偏差 −8.4；
+    去掉后 MAE 39.4、中位偏差 −5.4、方向命中 38/46（最好）。即那个 +3/−8 的平移是**负贡献**，
+    尤其在它把「近 3 个月已转冷（破发率 48%~71%）」的市场仍判为"热市＋3pt"时。
+    情绪不靠拍脑袋的加减项，而是靠 ① 滚动窗口（默认近 6 个月）自动吸收，
+    ② 「近 30/90 天」指标如实呈现给决策者。
+    """
     if not sample:
-        return {"label": "无样本", "shift": 0.0, "break_rate": None,
-                "avg_dark": None, "monthly": None, "median_over": None}
+        return {"label": "无样本", "shift": 0.0, "break_rate": None, "avg_dark": None,
+                "monthly": None, "median_over": None, "sent": sent or {},
+                "label_basis": "无样本", "ref_n": None, "ref_med": None, "ref_brk": None,
+                "ref_up": None, "long_break_rate": None, "long_avg_dark": None, "long_n": 0}
     dks = [r["dk"] for r in sample]
-    avg = statistics.median(dks)  # 用中位数，防妖股右尾把均值拉偏
+    avg = statistics.median(dks)          # 中位数，防妖股右尾把均值拉偏
     brk = sum(1 for x in dks if x < 0) / len(dks)
     overs = [r["over"] for r in sample if r["over"] > 0]
     med_over = statistics.median(overs) if overs else None
-    # 按月计数
     from collections import Counter
-    mc = Counter(r["ls"].strftime("%Y-%m") for r in sample)
-    monthly = dict(sorted(mc.items()))
-    # 冷热市判定与平移
-    if brk > 0.5 or avg < 0:
-        label, shift = "冷市", -8.0
-    elif brk < 0.3 and avg > 10:
-        label, shift = "热市", 3.0
+    monthly = dict(sorted(Counter(r["ls"].strftime("%Y-%m") for r in sample).items()))
+
+    # 「当前市况」标签优先用近 30 天（样本 >=3），否则近 90 天，最后退回整窗
+    ref, ref_txt = None, "近12个月窗口"
+    if sent:
+        for k, txt in (("d30", "近30天"), ("d90", "近90天")):
+            v = sent.get(k) or {}
+            if (v.get("n") or 0) >= 3 and v.get("med") is not None:
+                ref, ref_txt = v, txt
+                break
+    if ref is None:
+        ref = {"med": avg, "brk": brk * 100, "up": round(sum(1 for x in dks if x > 0) / len(dks) * 100, 1), "n": len(dks)}
+        ref_txt = "近12个月窗口"
+    m, b = ref["med"], ref["brk"]
+    if b > 50 or (m or 0) < 0:
+        label = "偏冷"
+    elif b < 30 and (m or 0) > 10:
+        label = "偏热"
     else:
-        label, shift = "中性", 0.0
-    return {"label": label, "shift": shift, "break_rate": round(brk * 100, 1),
-            "avg_dark": round(avg, 1), "monthly": monthly, "median_over": med_over}
+        label = "中性"
+    # ⚠ 展示纪律：标签与数字必须**同窗口**。此前 label 取近30天、break_rate/avg_dark 却取 12 个月，
+    #   会出现「偏冷（破发率 20.8%）」这种自相矛盾的展示 → 现统一为 ref 窗口，并单列长期窗口备查。
+    return {"label": label, "label_basis": ref_txt, "shift": 0.0,
+            "ref_n": ref.get("n"), "ref_med": round(m, 1) if m is not None else None,
+            "ref_brk": round(b, 1) if b is not None else None, "ref_up": ref.get("up"),
+            "break_rate": round(ref["brk"], 1) if ref.get("brk") is not None else None,
+            "avg_dark": round(ref["med"], 1) if ref.get("med") is not None else None,
+            "long_break_rate": round(brk * 100, 1), "long_avg_dark": round(avg, 1),
+            "long_n": len(dks),
+            "monthly": monthly, "median_over": med_over, "sent": sent or {}}
 
 # ---------------------------------------------------------------------------
 # 残差分层修正（改造 B）：超购档之外的边际信息
@@ -267,11 +454,11 @@ def attach_residuals(sample, buckets):
         out.append({**r, "bucket": bucket_index(r["over"]), "res": res})
     return out
 
-def strata_correction(sample_with_res, extras, target):
+def strata_correction(sample_with_res, extras, target, book=None):
     """对 target 股，按 5 因子档位取样本残差均值做修正（每层需 >=5 样本）。"""
-    baseline = sponsor_baseline(extras)
+    baseline = sponsor_baseline(extras, book)
     def lvl_sponsor(code):
-        st = sponsor_stats(extras, code)
+        st = sponsor_stats(extras, code, book)
         if not st or baseline is None: return None
         d = st["avg"] - baseline
         return "pos" if d > 3 else ("neg" if d < -3 else "mid")
@@ -335,7 +522,7 @@ def ah_implied(prem):
 # ---------------------------------------------------------------------------
 # 阶段预测
 # ---------------------------------------------------------------------------
-def predict_s1(stock, ctx, extras):
+def predict_s1(stock, ctx, extras, book=None):
     """招股期：方向性宽区间。A+H 优先；否则赛道选档。18C 合并单次 +5。"""
     ipo = num(stock.get("ipo_price"))
     if ipo is None or ipo <= 0: return None
@@ -373,7 +560,7 @@ def predict_s1(stock, ctx, extras):
                       "lo": round(loP, 1), "hi": round(hiP, 1),
                       "d": "18C 章节 → 上沿 +5%（已合并单次计入，不再重复）",
                       "formula": "上沿 +5pt（18C 特专科技章节，合并单次计入，避免重复）"})
-    sp = sponsor_adj_target(stock, extras, 0.15, 8)
+    sp = sponsor_adj_target(stock, extras, 0.15, 8, book)
     if sp:
         loP += sp["v"]; hiP += sp["v"]
         steps.append({"k": "保荐人战绩", "v": sp["v"], "type": "delta",
@@ -392,7 +579,7 @@ def predict_s1(stock, ctx, extras):
         "anchor": anchor, "steps": steps, "stage": "S1",
         "degrade": "招股期信息最少（无超购），区间偏宽"})
 
-def predict_s2(stock, ctx, extras, buckets, regime, sample_with_res):
+def predict_s2(stock, ctx, extras, buckets, regime, sample_with_res, book=None):
     """中签后→暗盘收盘（核心）。超购分档 + 残差分层修正 + 大盘环境 + 冷热市平移。"""
     ipo = num(stock.get("ipo_price"))
     if ipo is None or ipo <= 0: return None
@@ -445,7 +632,7 @@ def predict_s2(stock, ctx, extras, buckets, regime, sample_with_res):
         tgt = {"code": stock.get("stock_code"), "stock": stock, "intl": num(stock.get("international_subscription_multiple")),
                "name": stock.get("stock_name"), "chapter": stock.get("listing_chapter"),
                "shares": num(stock.get("shares_offered")), "ipo": ipo}
-        corr, cdetail = strata_correction(sample_with_res, extras, tgt)
+        corr, cdetail = strata_correction(sample_with_res, extras, tgt, book)
     if corr:
         med += corr
         used = "; ".join(f"{k}:{lv}({v})" for k, lv, v, n in cdetail if v is not None)
@@ -477,9 +664,9 @@ def predict_s2(stock, ctx, extras, buckets, regime, sample_with_res):
         "steps": steps, "base": round(med, 1), "dLo": round(dLo, 1), "dHi": round(dHi, 1),
         "stage": "S2", "provisional": prov})
 
-def predict_s3(stock, ctx, extras, regime, ratio=None):
+def predict_s3(stock, ctx, extras, regime, ratio=None, book=None):
     """招股期→暗盘后首日开盘：实际计算统一在 _recalc_s3（用标定妖股系数）。本函数转发，避免与 _recalc_s3 重复。"""
-    return _recalc_s3(stock, ctx, extras, regime, ratio or 0.7)
+    return _recalc_s3(stock, ctx, extras, regime, ratio or 0.7, book)
 
 # ---- 辅助：标定与因子 ----
 def calibrate_yao(pairs):
@@ -494,15 +681,15 @@ def calibrate_yao(pairs):
 def bucket_label(over):
     return BUCKET_LABELS[bucket_index(over)] if over is not None else "无超购"
 
-def sponsor_adj_target(stock, extras, k, cap):
-    st = sponsor_stats(extras, stock.get("stock_code"))
-    base = sponsor_baseline(extras)
+def sponsor_adj_target(stock, extras, k, cap, book=None):
+    st = sponsor_stats(extras, stock.get("stock_code"), book)
+    base = sponsor_baseline(extras, book)
     if not st or base is None: return None
     raw = (st["avg"] - base) * k
     v = clamp(raw, -cap, cap)
     return {"v": round(v, 2), "raw": round(raw, 2), "k": k, "cap": cap,
             "avg": round(st["avg"], 2), "base": round(base, 2), "n": st["n"],
-            "names": [n for n, _, _ in st["names"]]}
+            "src": st.get("src", ""), "names": [n for n, _, _ in st["names"]]}
 
 def cornerstone_adj_target(stock, extras):
     c = cornerstone_of(extras, stock.get("stock_code"), stock)
@@ -557,6 +744,212 @@ def resolve_stock(stocks, query):
             return s
     return None
 
+# ---------------------------------------------------------------------------
+# 卖出/持有规则库（每条都带实测依据与样本量；处置方案与报告共用，禁改文案不带上依据）
+# ---------------------------------------------------------------------------
+# 实测口径：近 12 个月已上市新股，**剔除 openPct 缺失样本**后 n=94。
+# 核心指标 = 「首日开盘涨幅 − 暗盘涨幅」：> 0 表示"熬到首日开盘再卖"比"暗盘直接卖"更好。
+SELL_BANDS = [
+    {"name": "暗盘 ≤ −10%", "grade": "exit",
+     "action": "直接清仓，现金/融资都一样",
+     "ev": "本档 n=6：首日开盘优于暗盘 2/6；中位差 −3.3pt；P25 −11.0pt",
+     "why": "深破发后首日平均更差，尾部极厚——样本里出现过暗盘 −3.5% 熬成首日开盘 −33.9% 的案例"},
+    {"name": "暗盘 −10% ~ 0", "grade": "exit",
+     "action": "直接清仓，别等绿鞋托价",
+     "ev": "本档 n=6：首日开盘优于暗盘 3/6；中位差 −1.9pt（破发组合计 n=12：5/12 更优、中位差 −2.7pt、翻红 0/12）",
+     "why": "12 只破发样本里没有一只在首日开盘翻红；且绿鞋托价上限＝发行价，你最多卖到发行价附近，中间还要白担首日不确定性"},
+    {"name": "暗盘 0 ~ +20%", "grade": "sell",
+     "action": "暗盘卖出为主（最多留 1/4 观察）",
+     "ev": "本档 n=22：首日开盘优于暗盘 5/22（23%）；中位差 −1.8pt",
+     "why": "小幅盈利时等首日的胜率只有 23%，是全样本最差的一档——落袋为优"},
+    {"name": "暗盘 +20% ~ +50%", "grade": "sell",
+     "action": "暗盘分批卖出，先落袋 6~7 成",
+     "ev": "本档 n=19：首日开盘优于暗盘 7/19（37%）；中位差 −2.8pt",
+     "why": "中高盈利时首日普遍回吐，先把大头变成现金"},
+    {"name": "暗盘 +50% ~ +100%", "grade": "split",
+     "action": "分批：暗盘卖一半，余量持到首日开盘早段卖",
+     "ev": "本档 n=23：首日开盘优于暗盘 14/23（61%）；中位差 +1.6pt；P25 −5.6pt",
+     "why": "期望微正但方差大，分批把'赌对/赌错'都锁在可承受范围"},
+    {"name": "暗盘 +100% ~ +200%", "grade": "split",
+     "action": "暗盘落袋 6~7 成，余量设移动止盈",
+     "ev": "本档 n=11：首日开盘优于暗盘 5/11（45%）；中位差 −1.4pt；P25 −11.5pt",
+     "why": "翻倍以上首日不确定性放大；且首日 60% 高开低走（收盘−开盘中位 −4.5pt）"},
+    {"name": "暗盘 > +200%", "grade": "split",
+     "action": "大比例落袋（≥7 成），余量用移动止盈博尾段",
+     "ev": "本档 n=7：首日开盘优于暗盘 4/7（57%）；中位差 +9.0pt，但 P25 −15.0pt、最差 −24.8pt",
+     "why": "中位很甜、方差失控：P25 已是 −15pt，等于约 1/4 概率把到手利润吐掉一大块"},
+]
+
+def band_of(dk):
+    edges = [(-1e9, -10), (-10, 0), (0, 20), (20, 50), (50, 100), (100, 200), (200, 1e9)]
+    for i, (lo, hi) in enumerate(edges):
+        if lo <= dk < hi: return SELL_BANDS[i]
+    return SELL_BANDS[-1]
+
+def trade_fees(amount):
+    """一买一卖的总摩擦成本与打平所需涨幅（低吸倒手是否划算的硬门槛）。"""
+    if not amount: return {"total": None, "breakeven_pct": None}
+    per = amount * (FEE_STAMP + FEE_COMM + FEE_SETTLE) + FEE_PLATFORM
+    total = per * 2
+    return {"total": round(total, 1), "breakeven_pct": round(total / amount * 100, 2)}
+
+def bucket_break_prob(tiers, over):
+    """该超购档的**暗盘破发概率**（实测频率，带样本量）。
+
+    用与主预测相同的**分层窗口（近端优先）**——冷市里若仍用 12 个月口径，
+    会把「近期破发率 71%」稀释成「20.8%」，严重低估风险。
+    门槛：近3月>=8 只 → 近6月>=8 只 → 近12月(有多少算多少)。
+    """
+    if over is None: return None, 0
+    bi = bucket_index(over)
+    if isinstance(tiers, list) and tiers and isinstance(tiers[0], tuple):
+        for rows, min_n in tiers:
+            v = [r["dk"] for r in rows if bucket_index(r["over"]) == bi]
+            if len(v) >= min_n:
+                return round(sum(1 for x in v if x < 0) / len(v) * 100, 1), len(v)
+        v = [r["dk"] for r in tiers[-1][0] if bucket_index(r["over"]) == bi]
+        if not v: return None, 0
+        return round(sum(1 for x in v if x < 0) / len(v) * 100, 1), len(v)
+    v = [r["dk"] for r in (tiers or []) if bucket_index(r["over"]) == bi]
+    if not v: return None, 0
+    return round(sum(1 for x in v if x < 0) / len(v) * 100, 1), len(v)
+
+def recent_check(stocks, today=None, n=12):
+    """最近已上市新股的**实况回测**（每次运行实时重算，严格因果、无未来函数）。
+
+    关键纪律：回测必须**跑与主预测完全相同的算法**（分层窗口 近3月→6月→12月），
+    否则回测的是另一个模型，等于假验证。做法：预测第 i 只时只用「比它更早上市」的新股，
+    绝不使用尚未暗盘/尚未上市的新股，也不使用未来数据。
+    """
+    today = today or datetime.date.today()
+    rows = sorted(build_sample(stocks, WINDOW_MONTHS, today), key=lambda r: r["ls"])
+    out = []
+    for r in rows:
+        prior = [x for x in rows if x["ls"] < r["ls"]]
+        if len(prior) < 40: continue
+        cut = {}
+        for key, months, min_n in (("near", WINDOW_MONTHS_NEAR, 5), ("mid", WINDOW_MONTHS_RECENT, 3),
+                                   ("long", WINDOW_MONTHS, 3)):
+            cut[key] = ([x for x in prior if x["ls"] >= r["ls"] - datetime.timedelta(days=int(months * 30.5))], min_n)
+        b = compute_buckets(tiers=[(cut["near"][0], 5, "近3月"), (cut["mid"][0], 3, "近6月"),
+                                   (cut["long"][0], 3, "近12月")])[bucket_index(r["over"])]
+        if b["med"] is None: continue
+        out.append({"code": r["code"], "name": r["name"], "ls": r["ls"].isoformat(),
+                    "over": r["over"], "band": b["label"], "src": b["src"],
+                    "pred": round(b["med"], 1), "actual": round(r["dk"], 1),
+                    "err": round(r["dk"] - b["med"], 1)})
+    tail = out[-n:]
+    summary = None
+    if tail:
+        errs = [x["err"] for x in tail]
+        dn = sum(1 for x in tail if x["actual"] < 0)
+        summary = {
+            "n": len(tail),
+            "mae": round(sum(abs(x) for x in errs) / len(errs), 1),
+            "med_err": round(statistics.median(errs), 1),
+            "dir_hit": sum(1 for x in tail if (x["pred"] > 0) == (x["actual"] > 0)),
+            "break_n": dn,
+            "break_called": sum(1 for x in tail if x["actual"] < 0 and x["pred"] < 0),
+            "span": f"{tail[0]['ls']} ~ {tail[-1]['ls']}",
+        }
+    return {"rows": tail, "summary": summary, "all_n": len(out)}
+
+def trade_plan(target, s2, s3, extras, regime, book=None, long_sample=None, yao=None, tiers=None):
+    """持仓处置方案：**报告直接给结论，不需要追问用户中了几手、是否融资**。
+
+    结构固定（每份报告一致）：身份/风险画像 → 三情景速查 → 七档卖出规则（带依据+样本量）
+    → 现金 vs 融资两套 → 成本清单 → 退出时点排序 → 绿鞋真实含义 → 边界与免责。
+    """
+    ipo = num(target.get("ipo_price"))
+    lot = num(target.get("lot_size")) or 0
+    amount = round(ipo * lot, 0) if (ipo and lot) else None
+    has_allot = target.get("has_allotment")
+    over = num(target.get("public_offer_subscription_multiple"))
+    prob, prob_n = bucket_break_prob(tiers if tiers is not None else (long_sample or []), over)
+    break_src = "近端分层窗口" if tiers else "近12月窗口"
+    pros = (extras.get("stocks", {}).get(target.get("stock_code"), {}) or {}).get("pros") or {}
+    band = bucket_label(over) if over is not None else "暂无超购（未公布配售结果）"
+    fees = trade_fees(amount)
+
+    # 决策总纲：**按暗盘实际落点分档**（不问用户任何问题，一律给全部分支）
+    # 注意：驱动变量是「暗盘实际成交价」，不是模型预测区间——预测只用于"预期"，
+    # 动作必须在暗盘 16:15–18:30 内按实际价格执行。七档明细见 bands（SELL_BANDS）。
+    scenarios = [
+        {"case": "暗盘破发（< 0%）", "act": "直接清仓，现金/融资都一样——不等首日、不等绿鞋",
+         "why": "实测破发组 12 只里首日开盘翻红 0/12；且绿鞋托价上限＝发行价，等不来更好的价"},
+        {"case": "暗盘小赚（0% ~ +50%）", "act": "以暗盘卖出为主：+0~+20% 全走，+20~+50% 至少落袋 6~7 成",
+         "why": "这两档「首日开盘优于暗盘」的概率只有 23% / 37%，中位差 −1.8 / −2.8pt，等首日是负期望"},
+        {"case": "暗盘大赚（> +50%）", "act": "分批：暗盘先卖一半，余量持到首日开盘早段（9:30–10:00）不冲高就清",
+         "why": "该档「首日开盘优于暗盘」61%（+50~+100%）/ 57%（>+200%），但方差极大（P25 −5.6 / −15pt），不分批就是把到手利润交回去"},
+    ]
+    # 盘中形态观察规则（诚实标注：站点无暗盘开盘/最高/最低/成交量字段，无法对"高开低走/低开高走"建模，
+    # 故只给"无论哪种形态都可执行"的观察纪律，不假装能预测形态）
+    intraday = [
+        ("暗盘开盘后 15 分钟（约 16:30 前）", "先别急着全平：用这 15 分钟看方向——若开盘即冲高后回落幅度 > 开盘价的 5%，按『高开低走』处理，直接清"),
+        ("高开低走（冲高后跌破开盘价）", "不恋战：本档动作打对折执行（示例：原本留一半，改成只留 1/4），余量设『跌破开盘价 3% 即清』"),
+        ("低开高走（先跌后收复开盘价并放量）", "可给该股额外 15 分钟观察窗；若收复后站上开盘价，按本档动作正常执行"),
+        ("全程缩量横盘", "以本档动作为准，不因『看起来没跌』拖延——缩量横盘在暗盘里最常见的结局是首日开盘直接低开"),
+        ("数据边界（重要）", "本站取不到暗盘的分时/最高/最低/成交量，所以『这只暗盘会高开低走还是低开高走』**无法用数据预测**；以上是执行纪律，不是预测。请以你券商 App 的实时报价为准（各券商暗盘独立撮合、价格不同）。"),
+    ]
+
+    amt_txt = f"{amount:,.0f} HKD" if amount else "—"
+    cash_plan = [
+        f"① 你的成本只有固定的认购手续费（约 49 HKD/笔）+ 中签费（{amt_txt} 的 1.0085%，约 {round(amount * FEE_ALLOT, 0):,.0f} HKD），**没有利息在跑**，所以不必为了省钱而着急卖。",
+        f"② 中签 1 手（本金约 {amt_txt}）：一手就是一发子弹，**按上面七档动作整手执行**——别拆成碎单，暗盘流动性有限，拆碎了只会吃更差的价。",
+        "③ 中签多手：**按档位分批**。例：若暗盘落在 +50%~+100% 档 → 暗盘卖一半、余量留首日开盘早段；若落在 0%~+20% 档 → 一次性全走。",
+        "④ 现金户唯一需要注意的：**破发时必须走**。既然没有利息压力、没有时间成本，你都判断它弱，那留着只是把'已经确定的亏损'换成'更大的不确定亏损'。",
+        "⑤ 别做的两件事：**不要在暗盘低吸加仓摊成本**（一买一卖摩擦成本 1~2%，该档统计优势仅 −3.4~+0.9pt，基本被费用吃光；且加仓 = 把同一只股敞口翻倍，是放大风险不是降低风险）；**不要因为'就剩一天了'而拖延**（首日 60% 高开低走）。",
+    ]
+    fin_plan = [
+        f"① 融资（孖展）户的成本结构不同：认购手续费约 99 HKD/笔 + **利息按日计、不中签也要付** + 中签费（约 {round(amount * FEE_ALLOT, 0):,.0f} HKD，若中 1 手）。**每多持一天都在烧钱。**",
+        "② 由此得出融资户的唯一原则：**提前一档执行**——比现金户更早、更多地落袋。例：现金户在 +50%~+100% 档是'卖一半留一半'，融资户应为'卖 7~8 成、只留 1~2 成博首日'。",
+        "③ 破发档（< 0%）：**无条件立即清仓**。融资户没有『熬一熬』这个选项——利息+潜在首日下跌是双重损耗。",
+        "④ 融资买入暗盘股票**不能再抵押融资**（各券商规则），所以别指望『低吸再加杠杆』这条路。",
+        "⑤ 若中签多手且是融资：**先用暗盘了结还掉融资**，把利息链条断掉；只把确实想博的那部分（≤1/4）留在首日。",
+    ]
+    # 绿鞋占比：优先用招股书披露的 greenPct；缺失时用「超额配售股数 ÷ 全球发售股数」推算
+    gpct = pros.get("greenPct")
+    if gpct is None and pros.get("greenShares"):
+        total_off = num(target.get("shares_offered"))
+        if total_off and total_off > 0:
+            gpct = round(pros["greenShares"] / total_off * 100, 1)
+    green = {
+        "has": bool(pros.get("hasGreen")),
+        "pct": gpct,
+        "pct_derived": pros.get("greenPct") is None and gpct is not None,
+        "shares": pros.get("greenShares"),
+        "stabilizer": pros.get("stabilizer"),
+        "url": pros.get("url"),
+    }
+    exit_order = [
+        ("首日开盘早段（9:30–10:00）", "统计最优出场点：首日 60% 高开低走，收盘比开盘中位低 4.5pt"),
+        ("暗盘（T-1 16:15–18:30）", "次优：T+0 可当日买卖，落袋即确定性"),
+        ("首日收盘", "最差：多数回吐发生在盘中，等收盘等于把优势让掉"),
+    ]
+    expect = None
+    if s2:
+        base, lo, hi = s2.get("base"), s2.get("loPct"), s2.get("hiPct")
+        exp_band = band_of(base) if base is not None else None
+        expect = {
+            "lo": lo, "hi": hi, "base": base,
+            "band": exp_band["name"] if exp_band else None,
+            "band_action": exp_band["action"] if exp_band else None,
+            "txt": (f"落在 {pct(lo)} ~ {pct(hi)}（中枢 {pct(base)}）"
+                    f"{'，对应卖出档「' + exp_band['name'] + '」' if exp_band else ''}"
+                    f"{'，该档历史动作：' + exp_band['action'] if exp_band else ''}"),
+            "provisional": bool(s2.get("provisional")),
+        }
+    return {
+        "amount": amount, "lot": lot, "ipo": ipo, "band": band, "over": over,
+        "prob": prob, "prob_n": prob_n, "break_src": break_src,
+        "fees": fees, "fee_allot": round(amount * FEE_ALLOT, 1) if amount else None,
+        "scenarios": scenarios, "bands": SELL_BANDS, "intraday": intraday, "expect": expect,
+        "cash_plan": cash_plan, "fin_plan": fin_plan,
+        "green": green, "exit_order": exit_order, "sent": (regime or {}).get("sent") or {},
+        "holding_days": "暗盘至首日共约 1 天（T-1 暗盘 → T 日开盘），融资利息按这 1~2 天计",
+        "has_allotment": has_allot,
+    }
+
 def run(query, sim_date=None, out=None, no_live=False):
     extras = load_extras()
     if no_live:
@@ -583,21 +976,28 @@ def run(query, sim_date=None, out=None, no_live=False):
                     ctx["ah"][code] = round(((ap * FX_CNY2HKD) / ipo - 1) * 100, 1)
     except Exception as e:
         sys.stderr.write(f"[warn] 行情获取失败，大盘修正项将缺失: {e}\n")
-    # 样本 + 桶 + 校准
-    sample = build_sample(stocks)
-    buckets = compute_buckets(sample)
-    regime = compute_regime(sample)
+    # 样本 + 桶 + 校准：**分层窗口（近端优先）** + 长期回退
+    #   近3月(>=5) → 近6月(>=3) → 近12月(>=3)：因果回测 MAE 46.6（固定6月窗口 52.7），最近12只 18.5（21.3）
+    near_sample = build_sample(stocks, WINDOW_MONTHS_NEAR)
+    recent_sample = build_sample(stocks, WINDOW_MONTHS_RECENT)
+    long_sample = build_sample(stocks, WINDOW_MONTHS)
+    tiers = [(near_sample, 5, "近3月"), (recent_sample, 3, "近6月"), (long_sample, 3, "近12月")]
+    buckets = compute_buckets(tiers=tiers)                              # 主预测用（分层）
+    buckets_long = compute_buckets(sample=long_sample)                   # 残差分层/破发概率用（样本更多）
+    sent = sentiment_windows(stocks)
+    regime = compute_regime(long_sample, sent)
+    book = build_sponsor_book(stocks, extras)
     # 给样本补残差所需元数据（name/chapter/stock）
-    for r in sample:
+    for r in long_sample:
         s = next((x for x in stocks if x.get("stock_code") == r["code"]), {})
         r["name"] = s.get("stock_name", ""); r["chapter"] = s.get("listing_chapter", "")
         r["stock_meta"] = s
-    swr = attach_residuals(sample, buckets)
+    swr = attach_residuals(long_sample, buckets_long)
     # 预测
-    s1 = predict_s1(target, ctx, extras)
-    s2 = predict_s2(target, ctx, extras, buckets, regime, swr)
-    # S3 只算一次：标定系数就绪后再算（此前先 predict_s3(默认0.7) 又立刻被覆盖，纯浪费）
-    # 妖股标定需要 (暗盘, 首日开盘) 对：从 stocks + extras 组装
+    s1 = predict_s1(target, ctx, extras, book)
+    s2 = predict_s2(target, ctx, extras, buckets, regime, swr, book)
+    # S3 只算一次：标定系数就绪后再算
+    # 妖股标定需要 (暗盘, 首日开盘) 对：从 stocks + extras 组装（openPct 缺失已按 None 处理）
     pairs = []
     for s in stocks:
         dk = num(s.get("dark_pool_change_pct"))
@@ -605,20 +1005,25 @@ def run(query, sim_date=None, out=None, no_live=False):
         if dk is not None and op is not None:
             pairs.append((dk, op))
     ratio = calibrate_yao(pairs)
-    # 重新算 S3 用标定系数
-    s3 = _recalc_s3(target, ctx, extras, regime, ratio)
+    s3 = _recalc_s3(target, ctx, extras, regime, ratio, book)
     # 开盘初判（基于 S2 收盘区间）
     openp = None
     if s2:
         openp = open_pronounce(s2["loPct"], s2["hiPct"], s2.get("base"))
+    plan = trade_plan(target, s2, s3, extras, regime, book, long_sample, ratio,
+                      tiers=[(near_sample, 8), (recent_sample, 8), (long_sample, 0)])
+    live = recent_check(stocks)
     result = {"target": target, "ctx": ctx, "regime": regime, "buckets": buckets,
-              "s1": s1, "s2": s2, "s3": s3, "open": openp, "yao_ratio": ratio,
-              "sample_n": len(sample)}
+              "buckets_long": buckets_long, "s1": s1, "s2": s2, "s3": s3, "open": openp,
+              "yao_ratio": ratio, "sample_n": len(long_sample),
+              "sample_near_n": len(near_sample), "sample_recent_n": len(recent_sample),
+              "book": {"covered": book["covered"], "base": round(book["base"], 1) if book["base"] is not None else None},
+              "plan": plan, "live": live}
     errs = selfcheck(result)
     if errs:
         sys.stderr.write("[自检告警] " + "；".join(errs) + "\n")
     else:
-        sys.stderr.write("[自检通过] 价格⇄涨跌幅互推 / 区间方向 / 样本量 均正常\n")
+        sys.stderr.write("[自检通过] 价格⇄涨跌幅互推 / 区间方向 / 样本量 / 处置方案结构 均正常\n")
     # 终端摘要
     print(summary_text(result))
     if out:
@@ -628,7 +1033,7 @@ def run(query, sim_date=None, out=None, no_live=False):
         print(f"\n[报告已生成] {out}")
     return result
 
-def _recalc_s3(target, ctx, extras, regime, ratio):
+def _recalc_s3(target, ctx, extras, regime, ratio, book=None):
     """用标定妖股系数重算 S3。"""
     ipo = num(target.get("ipo_price")); dk = num(target.get("dark_pool_change_pct"))
     if ipo is None or ipo <= 0 or dk is None: return None
@@ -655,7 +1060,7 @@ def _recalc_s3(target, ctx, extras, regime, ratio):
     if intl is not None and intl > 5:
         base += 2; steps.append({"k": "国配修正", "v": 2, "type": "delta", "d": f"国配 {intl} 倍 >5 → +2%",
                       "formula": f"国配 {intl} 倍 > 5 → +2%"})
-    sp = sponsor_adj_target(target, extras, 0.2, 10)
+    sp = sponsor_adj_target(target, extras, 0.2, 10, book)
     if sp:
         base += sp["v"]; steps.append({"k": "保荐人战绩(首日口径)", "v": sp["v"], "type": "delta",
                       "d": f"历史首日均值 {pct(sp['avg'])} vs 基准 {pct(sp['base'])} → {pct(sp['v'])}",
@@ -683,7 +1088,12 @@ def summary_text(r):
     L = []
     L.append(f"=== {t.get('stock_name')} ({t.get('stock_code')}) ===")
     L.append(f"发行价 {t.get('ipo_price')} ｜ 招股截止 {t.get('subscription_end_date')} ｜ 暗盘 {t.get('dark_pool_date')} ｜ 上市 {t.get('listing_date')}")
-    L.append(f"恒指 {pct(r['ctx'].get('hsi'))} ｜ 情绪周期 {r['regime']['label']}(破发率{r['regime']['break_rate']}%、均涨{pct(r['regime']['avg_dark'])}) ｜ 校准样本 n={r['sample_n']}")
+    rg = r["regime"]
+    L.append(f"恒指 {pct(r['ctx'].get('hsi'))} ｜ 市况 {rg['label']}（{rg.get('label_basis')}：n={rg.get('ref_n')}、"
+             f"中位暗盘 {pct(rg.get('ref_med'))}、破发率 {rg.get('ref_brk')}%）"
+             f" ｜ 长期窗口(12m)：中位 {pct(rg.get('long_avg_dark'))}、破发率 {rg.get('long_break_rate')}%")
+    L.append(f"校准样本：近3月 n={r.get('sample_near_n')} ／ 近6月 n={r.get('sample_recent_n')} ／ 近12月 n={r['sample_n']}"
+             f"（分层窗口：近端优先）｜ 保荐人实时库 {r['book']['covered']} 位（基准 {pct(r['book']['base'])}）")
     L.append(f"妖股标定系数(首日/暗盘) = {r['yao_ratio']}")
     for k in ("s1", "s2", "s3"):
         s = r[k]
@@ -695,6 +1105,34 @@ def summary_text(r):
     if r["open"]:
         o = r["open"]
         L.append(f"[开盘初判·辅] {pct(o['lo'])} ~ {pct(o['hi'])} （±{o['band']}pt 情绪带，非模型输出）")
+    p = r.get("plan") or {}
+    if p:
+        prob = "—（配售结果未公布）" if p.get("prob") is None else f"{p['prob']}%（{p.get('break_src')}，n={p['prob_n']}）"
+        amt = "—" if p.get("amount") is None else f"{p['amount']:,.0f} HKD"
+        L.append(f"[处置方案] 超购档 {p.get('band')} ｜ 该档暗盘破发概率 {prob} ｜ 一手本金 {amt}")
+        if p.get("expect"):
+            e = p["expect"]
+            L.append(f"   模型预期：暗盘{e['txt']}{'（配售结果未公布，为预估）' if e.get('provisional') else ''}")
+        for i, s in enumerate(p.get("scenarios") or [], 1):
+            L.append(f"   总纲{i}. {s['case']} → {s['act']}")
+        L.append(f"   退出时点排序：{' ＞ '.join(x[0] for x in (p.get('exit_order') or []))}")
+        g = p.get("green") or {}
+        if g.get("has"):
+            gp = f"{g.get('pct')}%" if g.get("pct") is not None else "占比未披露"
+            if g.get("pct_derived"): gp += "（按股数推算）"
+            gs = f"{g['shares']:,} 股" if g.get("shares") else "股数未披露"
+            gst = f"稳价人 {g['stabilizer']}" if g.get("stabilizer") else "稳价人未披露"
+            L.append(f"   绿鞋：有（{gp} / {gs} / {gst}）→ 托价上限＝发行价，别指望靠它赚钱")
+        else:
+            L.append("   绿鞋：无 → 没有稳价买盘托底，破发只能自己扛")
+        if p.get("fees", {}).get("total"):
+            L.append(f"   摩擦成本：一手一买一卖 ≈ {p['fees']['total']} HKD（打平需 {p['fees']['breakeven_pct']}%）→ 低吸倒手不划算")
+    lv = r.get("live") or {}
+    if lv.get("summary"):
+        s = lv["summary"]
+        L.append(f"[实况回测] 最近 {s['n']} 只已上市新股（{s['span']}）用同一算法滚动预测："
+                 f"MAE {s['mae']}pt、中位偏差 {s['med_err']}pt、"
+                 f"方向命中 {s['dir_hit']}/{s['n']}、破发识别 {s['break_called']}/{s['break_n']}")
     return "\n".join(L)
 
 # —— HTML 报告在 report.py 中生成，保持本文件聚焦引擎 ——
@@ -731,6 +1169,38 @@ def selfcheck(r):
         errs.append("[open] 开盘初判区间反转")
     if r["sample_n"] < 50:
         errs.append(f"样本不足 {r['sample_n']}（<50），结论不可靠")
+    # 处置方案结构校验（此前 selfcheck 未查 plan，却在终端打印"处置方案结构 均正常" → 假绿灯，现已补实）
+    p = r.get("plan")
+    if not p:
+        errs.append("[plan] 处置方案缺失")
+    else:
+        for key in ("scenarios", "bands", "cash_plan", "fin_plan", "exit_order", "green"):
+            if not p.get(key):
+                errs.append(f"[plan] 缺字段 {key}")
+        if len(p.get("bands") or []) != len(SELL_BANDS):
+            errs.append(f"[plan] 卖出档位数量 {len(p.get('bands') or [])} ≠ {len(SELL_BANDS)}")
+        # 每档必须带实测依据与样本量（防"只给结论不给依据"）
+        for b in (p.get("bands") or []):
+            if not b.get("ev") or not b.get("action"):
+                errs.append(f"[plan] 档位 {b.get('name')} 缺 action/ev 依据")
+        if p.get("amount") is not None and p["amount"] <= 0:
+            errs.append("[plan] 一手本金异常")
+        for s in (p.get("scenarios") or []):
+            if not s.get("case") or not s.get("act"):
+                errs.append(f"[plan] 情景 {s.get('case')} 缺动作")
+    # 情绪标签与展示数字必须同窗口（防「偏冷(破发率20.8%)」自相矛盾）
+    rg = r.get("regime") or {}
+    if rg.get("label") not in (None, "无样本") and rg.get("break_rate") is None:
+        errs.append("[regime] 有标签但无同窗口破发率")
+    lv = r.get("live") or {}
+    if lv.get("rows"):
+        if not lv.get("summary"):
+            errs.append("[live] 实况回测有行但无汇总")
+        else:
+            for row in lv["rows"]:
+                if row.get("pred") is None or row.get("actual") is None:
+                    errs.append(f"[live] {row.get('code')} 缺预测/实际值")
+                    break
     return errs
 
 # ---------------------------------------------------------------------------
